@@ -17,7 +17,8 @@ export const parameters = {
 
 function ColorSchemeWrapper({ children }: { children: React.ReactNode }) {
   const { setColorScheme } = useMantineColorScheme();
-  const handleColorScheme = (value: boolean) => setColorScheme(value ? 'dark' : 'light');
+  const handleColorScheme = (value: boolean) =>
+    setColorScheme(value ? 'dark' : 'light');
 
   useEffect(() => {
     channel.on(DARK_MODE_EVENT_NAME, handleColorScheme);
@@ -28,6 +29,10 @@ function ColorSchemeWrapper({ children }: { children: React.ReactNode }) {
 }
 
 export const decorators = [
-  (renderStory: any) => <ColorSchemeWrapper>{renderStory()}</ColorSchemeWrapper>,
-  (renderStory: any) => <MantineProvider theme={theme}>{renderStory()}</MantineProvider>,
+  (renderStory: any) => (
+    <ColorSchemeWrapper>{renderStory()}</ColorSchemeWrapper>
+  ),
+  (renderStory: any) => (
+    <MantineProvider theme={theme}>{renderStory()}</MantineProvider>
+  ),
 ];
