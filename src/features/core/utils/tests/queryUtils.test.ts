@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { FilterParams, GroupParams } from '../../types/query.types';
+import type { FilterParams } from '../../types/query.types';
 import {
   applyFilters,
   applyPagination,
@@ -176,69 +176,35 @@ describe('applyPagination', () => {
   const data = new FakeCollection([...Array(10).keys()]) as unknown as any;
 
   it('first page', async () => {
-    const paged = applyPagination(data, { page: 1, pageSize: 3 });
+    const paged = applyPagination(data, { pageIndex: 0, pageSize: 3 });
     expect(await paged.toArray()).toEqual([0, 1, 2]);
   });
 
   it('second page', async () => {
-    const paged = applyPagination(data, { page: 2, pageSize: 3 });
+    const paged = applyPagination(data, { pageIndex: 1, pageSize: 3 });
     expect(await paged.toArray()).toEqual([3, 4, 5]);
   });
 
   it('overflow page returns empty', async () => {
-    const paged = applyPagination(data, { page: 5, pageSize: 3 });
+    const paged = applyPagination(data, { pageIndex: 4, pageSize: 3 });
     expect(await paged.toArray()).toEqual([]);
   });
 
-  it('page 0 behaves as page 1 (or empty)', async () => {
+  it('page 0', async () => {
     expect(
-      await applyPagination(data, { page: 0, pageSize: 3 }).toArray()
+      await applyPagination(data, { pageIndex: 0, pageSize: 3 }).toArray()
     ).toEqual([0, 1, 2]);
   });
 
   it('pageSize 0 always empty', async () => {
     expect(
-      await applyPagination(data, { page: 1, pageSize: 0 }).toArray()
+      await applyPagination(data, { pageIndex: 0, pageSize: 0 }).toArray()
     ).toEqual([]);
   });
 
   it('pageSize Infinity returns all', async () => {
-    const paged = applyPagination(data, { page: 1, pageSize: Infinity });
+    const paged = applyPagination(data, { pageIndex: 0, pageSize: Infinity });
     expect(await paged.toArray()).toEqual([...Array(10).keys()]);
-  });
-});
-
-describe('groupItems (discriminated union API)', () => {
-  const items: Item[] = [
-    { id: 1, name: 'Alice', tags: ['x', 'y'], value: 10 },
-    { id: 2, name: 'Bob', tags: ['y'], value: 20 },
-    { id: 3, name: 'Alice', tags: ['x'], value: 5 },
-  ];
-
-  it('groups by a field', () => {
-    const params: GroupParams<Item>[] = [{ type: 'field', value: 'name' }];
-    const result = groupItems(items, params);
-    expect(Object.keys(result).sort()).toEqual(['Alice', 'Bob']);
-    expect((result.Alice as Item[]).map((i) => i.id).sort()).toEqual([1, 3]);
-  });
-
-  it('groups by a tag', () => {
-    const params: GroupParams<Item>[] = [{ type: 'tag', value: 'x' }];
-    const result = groupItems(items, params);
-    expect((result.x as Item[]).map((i) => i.id).sort()).toEqual([1, 3]);
-    expect((result['no-x'] as Item[]).map((i) => i.id)).toEqual([2]);
-  });
-
-  it('nested grouping: tag then field', () => {
-    const params: GroupParams<Item>[] = [
-      { type: 'tag', value: 'x' },
-      { type: 'field', value: 'name' },
-    ];
-    const nested = groupItems(items, params);
-    expect(Object.keys(nested).sort()).toEqual(['no-x', 'x']);
-    const xGroup = nested.x as Record<string, Item[]>;
-    expect(Object.keys(xGroup)).toEqual(['Alice']);
-    expect(xGroup.Alice.map((i) => i.id).sort()).toEqual([1, 3]);
   });
 });
 
@@ -249,39 +215,55 @@ describe('groupItems', () => {
     { id: 3, name: 'Alice', tags: ['x'], value: 5 },
   ];
 
-  it('group by field', () => {
-    const params: GroupParams<Item>[] = [{ type: 'field', value: 'name' }];
-    const grouped = groupItems(items, params);
-    expect(Object.keys(grouped).sort()).toEqual(['Alice', 'Bob']);
-    expect((grouped.Alice as Item[]).map((i) => i.id).sort()).toEqual([1, 3]);
+  it('groups by a scalar field', () => {
+    const grouped = groupItems(items, ['name']);
+    // should get two buckets: "Alice" and "Bob"
+    const keys = grouped.map((r) => (r as any).name).sort();
+    expect(keys).toEqual(['Alice', 'Bob']);
+
+    // "Alice" bucket should contain items 1 and 3
+    const alice = grouped.find((r) => (r as any).name === 'Alice')!;
+    const ids = (alice?.subRows as Item[]).map((i) => i.id).sort();
+    expect(ids).toEqual([1, 3]);
   });
 
-  it('group by tag', () => {
-    const params: GroupParams<Item>[] = [{ type: 'tag', value: 'x' }];
-    const grouped = groupItems(items, params);
-    // bucket "x" contains those with tag 'x'
-    expect((grouped.x as Item[]).map((i) => i.id).sort()).toEqual([1, 3]);
-    // bucket "no-x" contains those without 'x'
-    expect((grouped['no-x'] as Item[]).map((i) => i.id)).toEqual([2]);
+  it('groups by an array field (tags)', () => {
+    const grouped = groupItems(items, ['tags']);
+    // should get only the tags that actually occur: "x" and "y"
+    const tagKeys = grouped.map((r) => (r as any).tags).sort();
+    expect(tagKeys).toEqual(['x', 'y']);
+
+    // "x" bucket: items 1 and 3
+    const xGroup = grouped.find((r) => (r as any).tags === 'x')!;
+    expect((xGroup?.subRows as Item[]).map((i) => i.id).sort()).toEqual([1, 3]);
+
+    // "y" bucket: items 1 and 2
+    const yGroup = grouped.find((r) => (r as any).tags === 'y')!;
+    expect((yGroup?.subRows as Item[]).map((i) => i.id).sort()).toEqual([1, 2]);
   });
 
-  it('nested group: tag then field', () => {
-    const params: GroupParams<Item>[] = [
-      { type: 'tag', value: 'x' },
-      { type: 'field', value: 'name' },
-    ];
-    const nested = groupItems(items, params);
-    // first-level keys: 'x' and 'no-x'
-    expect(Object.keys(nested).sort()).toEqual(['no-x', 'x']);
-    // within 'x', group by name:
-    const xGroup = nested.x as Record<string, Item[]>;
-    expect(Object.keys(xGroup).sort()).toEqual(['Alice']);
-    expect(xGroup.Alice.map((i) => i.id).sort()).toEqual([1, 3]);
+  it('nested grouping: first by tags, then by name', () => {
+    const nested = groupItems(items, ['tags', 'name']);
+    // top-level buckets: "x" and "y"
+    const topKeys = nested.map((r) => (r as any).tags).sort();
+    expect(topKeys).toEqual(['x', 'y']);
+
+    // within the "x" bucket, group again by name
+    const xBucket = nested.find((r) => (r as any).tags === 'x')!;
+    const subGroupKeys = (xBucket?.subRows as any[]).map((r) => r.name);
+    expect(subGroupKeys).toEqual(['Alice']);
+
+    // that nested "Alice" must contain items 1 & 3
+    const aliceSub = (xBucket?.subRows as any[]).find(
+      (r) => r.name === 'Alice'
+    )!;
+    expect((aliceSub?.subRows as Item[]).map((i) => i.id).sort()).toEqual([
+      1, 3,
+    ]);
   });
 });
 
 describe('full pipeline: filter + paginate + sort + group', () => {
-  // reuse existing Item type and FakeCollection
   const data: Item[] = [
     { id: 1, name: 'Alice', tags: ['x', 'y'], value: 10 },
     { id: 2, name: 'alice', tags: ['y', 'z'], value: 20 },
@@ -290,8 +272,8 @@ describe('full pipeline: filter + paginate + sort + group', () => {
   ];
   const coll = new FakeCollection<Item>(data) as unknown as any;
 
-  it('filters tags contains "x", paginates page=1 size=1, sorts by value asc, groups by name', async () => {
-    // 1) Filter items whose tags contain "x" → ids [1,3]
+  it('filters tags contains "x", paginates, sorts, then groups by name', async () => {
+    // 1) Filter items whose tags contain "x" → [1,3]
     const filters: FilterParams<Item, keyof Item>[] = [
       { field: 'tags', operator: 'contains', value: 'x' },
     ];
@@ -299,8 +281,8 @@ describe('full pipeline: filter + paginate + sort + group', () => {
     const filteredIds = (await filtered.toArray()).map((i) => i.id).sort();
     expect(filteredIds).toEqual([1, 3]);
 
-    // 2) Paginate: page 1, pageSize 1 → first of [1,3] → id 1
-    const paged = applyPagination(filtered, { page: 1, pageSize: 1 });
+    // 2) Paginate: pageIndex=0, pageSize=1 → only the first of [1,3] → id=1
+    const paged = applyPagination(filtered, { pageIndex: 0, pageSize: 1 });
     const pageItems = await paged.toArray();
     expect(pageItems.map((i) => i.id)).toEqual([1]);
 
@@ -310,9 +292,10 @@ describe('full pipeline: filter + paginate + sort + group', () => {
     ]);
     expect(sorted.map((i) => i.value)).toEqual([10]);
 
-    // 4) Group by name
-    const grouped = groupItems(sorted, [{ type: 'field', value: 'name' }]);
-    expect(Object.keys(grouped)).toEqual(['Alice']);
-    expect((grouped.Alice as Item[])[0].id).toBe(1);
+    // 4) Finally group by name
+    const grouped = groupItems(sorted, ['name']);
+    expect(grouped.length).toBe(1);
+    expect((grouped[0] as any).name).toBe('Alice');
+    expect((grouped[0]?.subRows as Item[])[0].id).toBe(1);
   });
 });

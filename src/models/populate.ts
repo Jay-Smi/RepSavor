@@ -3,7 +3,12 @@ import { AppDB } from './db';
 // ======= Populate Functions =======
 export async function populateIngredients(db: AppDB) {
   await db.ingredients.bulkAdd([
-    { name: 'Chicken Breast', type: 'ingredient', tags: ['protein'], externalLink: '' },
+    {
+      name: 'Chicken Breast',
+      type: 'ingredient',
+      tags: ['protein'],
+      externalLink: '',
+    },
     { name: 'Broccoli', type: 'ingredient', tags: ['vegetable'] },
   ]);
 }
@@ -108,6 +113,7 @@ export async function populateCustomFoods(db: AppDB) {
       type: 'custom',
       quantity: 1,
       unit: 'bar',
+      tags: ['snack', 'high-protein'],
       defaultPortion: { quantity: 1, unit: 'bar' },
       cachedMacros: { protein: 10, fat: 8, carbs: 20 },
     },
@@ -115,9 +121,18 @@ export async function populateCustomFoods(db: AppDB) {
 }
 
 export async function populateRecipeIngredients(db: AppDB) {
-  const salad = await db.recipes.where('name').equals('Grilled Chicken Salad').first();
-  const chicken = await db.ingredients.where('name').equals('Chicken Breast').first();
-  const broccoli = await db.ingredients.where('name').equals('Broccoli').first();
+  const salad = await db.recipes
+    .where('name')
+    .equals('Grilled Chicken Salad')
+    .first();
+  const chicken = await db.ingredients
+    .where('name')
+    .equals('Chicken Breast')
+    .first();
+  const broccoli = await db.ingredients
+    .where('name')
+    .equals('Broccoli')
+    .first();
   if (salad?.id && chicken?.id && broccoli?.id) {
     await db.recipeIngredients.bulkAdd([
       {
@@ -150,14 +165,35 @@ export async function populateNutritionFacts(db: AppDB) {
   const protein = await db.nutrients.where('name').equals('Protein').first();
   const fat = await db.nutrients.where('name').equals('Fat').first();
   const carbs = await db.nutrients.where('name').equals('Carbs').first();
-  const chicken = await db.ingredients.where('name').equals('Chicken Breast').first();
-  const broccoli = await db.ingredients.where('name').equals('Broccoli').first();
+  const chicken = await db.ingredients
+    .where('name')
+    .equals('Chicken Breast')
+    .first();
+  const broccoli = await db.ingredients
+    .where('name')
+    .equals('Broccoli')
+    .first();
   if (protein && fat && carbs) {
     if (chicken?.id) {
       await db.nutritionFacts.bulkAdd([
-        { itemType: 'ingredient', itemId: chicken.id, nutrientId: protein.id!, amountPerUnit: 31 },
-        { itemType: 'ingredient', itemId: chicken.id, nutrientId: fat.id!, amountPerUnit: 3.6 },
-        { itemType: 'ingredient', itemId: chicken.id, nutrientId: carbs.id!, amountPerUnit: 0 },
+        {
+          itemType: 'ingredient',
+          itemId: chicken.id,
+          nutrientId: protein.id!,
+          amountPerUnit: 31,
+        },
+        {
+          itemType: 'ingredient',
+          itemId: chicken.id,
+          nutrientId: fat.id!,
+          amountPerUnit: 3.6,
+        },
+        {
+          itemType: 'ingredient',
+          itemId: chicken.id,
+          nutrientId: carbs.id!,
+          amountPerUnit: 0,
+        },
       ]);
     }
     if (broccoli?.id) {
@@ -168,15 +204,28 @@ export async function populateNutritionFacts(db: AppDB) {
           nutrientId: protein.id!,
           amountPerUnit: 2.8,
         },
-        { itemType: 'ingredient', itemId: broccoli.id, nutrientId: fat.id!, amountPerUnit: 0.4 },
-        { itemType: 'ingredient', itemId: broccoli.id, nutrientId: carbs.id!, amountPerUnit: 7 },
+        {
+          itemType: 'ingredient',
+          itemId: broccoli.id,
+          nutrientId: fat.id!,
+          amountPerUnit: 0.4,
+        },
+        {
+          itemType: 'ingredient',
+          itemId: broccoli.id,
+          nutrientId: carbs.id!,
+          amountPerUnit: 7,
+        },
       ]);
     }
   }
 }
 
 export async function populateReviews(db: AppDB) {
-  const salad = await db.recipes.where('name').equals('Grilled Chicken Salad').first();
+  const salad = await db.recipes
+    .where('name')
+    .equals('Grilled Chicken Salad')
+    .first();
   if (salad?.id) {
     await db.reviews.add({
       itemType: 'recipe',
@@ -189,7 +238,10 @@ export async function populateReviews(db: AppDB) {
 }
 
 export async function populateConsumptions(db: AppDB) {
-  const salad = await db.recipes.where('name').equals('Grilled Chicken Salad').first();
+  const salad = await db.recipes
+    .where('name')
+    .equals('Grilled Chicken Salad')
+    .first();
   if (salad?.id) {
     await db.consumptions.bulkAdd([
       {
@@ -199,7 +251,13 @@ export async function populateConsumptions(db: AppDB) {
         unit: 'serving',
         date: Date.now() - 86400000,
       }, // yesterday
-      { itemType: 'recipe', itemId: salad.id, quantity: 2, unit: 'serving', date: Date.now() },
+      {
+        itemType: 'recipe',
+        itemId: salad.id,
+        quantity: 2,
+        unit: 'serving',
+        date: Date.now(),
+      },
     ]);
   }
 }
@@ -210,8 +268,14 @@ export async function populateShoppingLists(db: AppDB) {
 }
 
 export async function populateShoppingListItems(db: AppDB) {
-  const list = await db.shoppingLists.where('name').equals('Weekly Groceries').first();
-  const chicken = await db.ingredients.where('name').equals('Chicken Breast').first();
+  const list = await db.shoppingLists
+    .where('name')
+    .equals('Weekly Groceries')
+    .first();
+  const chicken = await db.ingredients
+    .where('name')
+    .equals('Chicken Breast')
+    .first();
   if (list?.id) {
     await db.shoppingListItems.bulkAdd([
       {
@@ -223,7 +287,13 @@ export async function populateShoppingListItems(db: AppDB) {
         quantity: 2,
         unit: 'lb',
       },
-      { listId: list.id, name: 'Milk', purchased: false, quantity: 1, unit: 'gal' },
+      {
+        listId: list.id,
+        name: 'Milk',
+        purchased: false,
+        quantity: 1,
+        unit: 'gal',
+      },
     ]);
   }
 }

@@ -15,7 +15,7 @@ export function useListQueryParamState<T>(
   defaultParams?: Partial<ListQueryParams<T>>
 ) {
   const [params, setParams] = useState<ListQueryParams<T>>({
-    pagination: { page: 1, pageSize: Infinity },
+    pagination: { pageIndex: 0, pageSize: Infinity },
     sort: [],
     filters: [],
     groupBy: [],

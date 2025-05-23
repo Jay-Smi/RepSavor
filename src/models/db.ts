@@ -48,28 +48,36 @@ export class AppDB extends Dexie {
       reviews: '++id, itemType, itemId, rating, createdAt',
       consumptions: '++id, date, [date+itemType], [date+itemId]',
       shoppingLists: '++id, name, createdAt, updatedAt',
-      shoppingListItems: '++id, listId, itemType, itemId, purchased, createdAt, updatedAt',
+      shoppingListItems:
+        '++id, listId, itemType, itemId, purchased, createdAt, updatedAt',
     });
 
     // Auto-set timestamps on create/update
-    [this.ingredients, this.recipes, this.customFoods, this.shoppingLists].forEach(
-      (table: Table<any, number>) => {
-        table.hook('creating', (_: number, obj: FoodItemBase) => {
-          const now = Date.now();
-          obj.createdAt = now;
-          obj.updatedAt = now;
-        });
-        table.hook('updating', (mods: Partial<FoodItemBase>) => {
-          mods.updatedAt = Date.now();
-        });
-      }
-    );
+    [
+      this.ingredients,
+      this.recipes,
+      this.customFoods,
+      this.shoppingLists,
+    ].forEach((table: Table<any, number>) => {
+      table.hook('creating', (_: number, obj: FoodItemBase) => {
+        const now = Date.now();
+        obj.createdAt = now;
+        obj.updatedAt = now;
+      });
+      table.hook('updating', (mods: Partial<FoodItemBase>) => {
+        mods.updatedAt = Date.now();
+      });
+    });
   }
 
   /**
    * Generic cascade-delete for any FoodItem type.
    */
-  async deleteFoodItem(type: FoodItemBase['type'], id: number, cascade = true): Promise<void> {
+  async deleteFoodItem(
+    type: FoodItemBase['type'],
+    id: number,
+    cascade = true
+  ): Promise<void> {
     const recIng = this.recipeIngredients;
     const nutFacts = this.nutritionFacts;
     const rev = this.reviews;
@@ -91,30 +99,34 @@ export class AppDB extends Dexie {
         throw new Error(`Unsupported type for deleteFoodItem: ${type}`);
     }
     if (cascade) {
-      await this.transaction('rw', [recIng, nutFacts, rev, cons, tbl], async () => {
-        // Remove recipe-ingredient links if applicable
-        switch (type) {
-          case 'ingredient':
-            await recIng.where({ ingredientId: id }).delete();
-            break;
-          case 'recipe':
-            await recIng.where({ recipeId: id }).delete();
-            break;
-          case 'custom':
-            // no recipe-ingredient records to delete
-            break;
-          default:
-            throw new Error(`Unsupported type for deleteFoodItem: ${type}`);
+      await this.transaction(
+        'rw',
+        [recIng, nutFacts, rev, cons, tbl],
+        async () => {
+          // Remove recipe-ingredient links if applicable
+          switch (type) {
+            case 'ingredient':
+              await recIng.where({ ingredientId: id }).delete();
+              break;
+            case 'recipe':
+              await recIng.where({ recipeId: id }).delete();
+              break;
+            case 'custom':
+              // no recipe-ingredient records to delete
+              break;
+            default:
+              throw new Error(`Unsupported type for deleteFoodItem: ${type}`);
+          }
+
+          // Remove all nutrition facts, reviews, and consumption logs
+          await nutFacts.where({ itemType: type, itemId: id }).delete();
+          await rev.where({ itemType: type, itemId: id }).delete();
+          await cons.where({ itemType: type, itemId: id }).delete();
+
+          // Finally, delete the item itself
+          await tbl.delete(id);
         }
-
-        // Remove all nutrition facts, reviews, and consumption logs
-        await nutFacts.where({ itemType: type, itemId: id }).delete();
-        await rev.where({ itemType: type, itemId: id }).delete();
-        await cons.where({ itemType: type, itemId: id }).delete();
-
-        // Finally, delete the item itself
-        await tbl.delete(id);
-      });
+      );
     } else {
       await tbl.delete(id);
     }
@@ -122,12 +134,16 @@ export class AppDB extends Dexie {
 
   async deleteShoppingList(listId: number, cascade = true): Promise<void> {
     if (cascade) {
-      await this.transaction('rw', [this.shoppingListItems, this.shoppingLists], async () => {
-        // Remove all items in that list
-        await this.shoppingListItems.where({ listId }).delete();
-        // Then remove the list itself
-        await this.shoppingLists.delete(listId);
-      });
+      await this.transaction(
+        'rw',
+        [this.shoppingListItems, this.shoppingLists],
+        async () => {
+          // Remove all items in that list
+          await this.shoppingListItems.where({ listId }).delete();
+          // Then remove the list itself
+          await this.shoppingLists.delete(listId);
+        }
+      );
     } else {
       await this.shoppingLists.delete(listId);
     }

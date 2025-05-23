@@ -2,8 +2,7 @@ import { useCallback, useState } from 'react';
 import { Table } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
-  GroupedListItemsData,
-  ListItemsData,
+  GroupedItem,
   ListItemsDataResponse,
   ListQueryParams,
   ListQueryResult,
@@ -26,7 +25,7 @@ export function useListQuery<T extends { tags: string[] }>(
   const {
     filters = [],
     sort = [],
-    pagination = { page: 1, pageSize: Infinity },
+    pagination = { pageIndex: 1, pageSize: Infinity },
     groupBy = [],
   } = params || {};
 
@@ -46,34 +45,25 @@ export function useListQuery<T extends { tags: string[] }>(
 
       chain = applyPagination(chain, pagination);
 
-      let items = await chain.toArray();
+      let raw = await chain.toArray();
 
       if (sort.length) {
-        items = sortItems(items, sort);
+        raw = sortItems(raw, sort);
       }
 
-      if (groupBy.length > 0) {
-        const groups = groupItems(items, groupBy);
-        const result: GroupedListItemsData<T> = {
-          type: 'grouped',
-          groups,
-          total,
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-        };
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        return result;
-      }
+      const items: GroupedItem<T>[] =
+        groupBy.length > 0
+          ? groupItems(raw, groupBy)
+          : (raw as GroupedItem<T>[]);
 
-      const result: ListItemsData<T> = {
-        type: 'list',
+      const result: ListItemsDataResponse<T> = {
         items,
         total,
-        page: pagination.page,
+        page: pagination.pageIndex,
         pageSize: pagination.pageSize,
       };
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       return result;
     } catch (err) {

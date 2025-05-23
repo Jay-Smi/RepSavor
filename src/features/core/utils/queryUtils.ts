@@ -1,7 +1,7 @@
 import { Collection } from 'dexie';
 import {
   FilterParams,
-  GroupedList,
+  GroupedItem,
   GroupParams,
   PaginationParams,
   SortByField,
@@ -74,10 +74,10 @@ export function applyFilters<T>(
  */
 export function applyPagination<T>(
   chain: Collection<T, number>,
-  { page, pageSize }: PaginationParams
+  { pageIndex, pageSize }: PaginationParams
 ): Collection<T, number> {
-  const effectivePage = page < 1 ? 1 : page;
-  const offset = (effectivePage - 1) * pageSize;
+  const effectivePage = pageIndex < 0 ? 0 : pageIndex;
+  const offset = effectivePage * pageSize;
 
   if (!Number.isFinite(pageSize)) {
     return chain;
@@ -86,56 +86,50 @@ export function applyPagination<T>(
 }
 
 /**
- * Recursively group items by specified fields or tags.
+ * Recursively group items by the given list of keys.
+ *
+ * - If items[*][key] is an Array, each element in that array becomes its own bucket.
+ * - Otherwise, we bucket by `String(item[key])`.
+ * - Items may appear in multiple buckets if the field is an array.
  */
 export function groupItems<T>(
   items: T[],
-  fields: GroupParams<T>[]
-): GroupedList<T> {
+  fields: GroupParams<T>
+): GroupedItem<T>[] {
+  // no grouping requested → just return raw items
   if (fields.length === 0) {
-    return {};
+    return items as GroupedItem<T>[];
   }
 
-  const [first, ...rest] = fields;
+  const [firstKey, ...restKeys] = fields;
 
+  // stage 1: build buckets: map bucketName → T[]
   const buckets: Record<string, T[]> = {};
-
-  if (first.type === 'field') {
-    const keyField = first.value;
-    for (const item of items) {
-      const key = String(item[keyField]);
-      if (!buckets[key]) {
-        buckets[key] = [];
+  for (const it of items) {
+    const val = (it as any)[firstKey];
+    if (Array.isArray(val)) {
+      // explode array: each element becomes its own bucket
+      for (const entry of val) {
+        const name = String(entry);
+        (buckets[name] ||= []).push(it);
       }
-      buckets[key].push(item); // buckets[key] is T[] so .push() works
-    }
-  } else {
-    // first.type === 'tag'
-    const tag = first.value;
-    // those that have the tag
-    buckets[String(tag)] = items.filter(
-      (item: any) => Array.isArray(item.tags) && item.tags.includes(tag)
-    );
-    // those that do not
-    const restItems = items.filter(
-      (item: any) => !Array.isArray(item.tags) || !item.tags.includes(tag)
-    );
-    if (restItems.length) {
-      buckets[`no-${tag}`] = restItems;
+    } else {
+      // normal scalar field
+      const name = val == null ? 'undefined' : String(val);
+      (buckets[name] ||= []).push(it);
     }
   }
 
-  // If we need to group by more fields, we know each buckets[key] is currently T[]
-  if (rest.length > 0) {
-    const nested: GroupedList<T> = {};
-    for (const key in buckets) {
-      // recurse on that T[] and assign back into nested
-      nested[key] = groupItems(buckets[key], rest);
-    }
-    return nested;
-  }
-
-  return buckets as GroupedList<T>;
+  // stage 2: turn each bucket into a GroupRow
+  return Object.entries(buckets).map(([bucketName, bucketItems]) => {
+    const row: any = {
+      [firstKey as string]: bucketName,
+      subRows: restKeys.length
+        ? groupItems(bucketItems, restKeys)
+        : (bucketItems as GroupedItem<T>[]),
+    };
+    return row as GroupedItem<T>;
+  });
 }
 
 /**
