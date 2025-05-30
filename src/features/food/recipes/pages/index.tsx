@@ -7,7 +7,7 @@ interface RecipesPageProps {}
 
 const RecipesPage = ({}: RecipesPageProps) => {
   // ** global state ** //
-  const [params, setParams] = useListQueryParamState<Recipe>({});
+  const [params, handlers] = useListQueryParamState();
 
   const result = useRecipes(params);
 
@@ -21,6 +21,7 @@ const RecipesPage = ({}: RecipesPageProps) => {
       itemType="recipe"
       result={result}
       params={params}
+      handlers={handlers}
       viewMode="table"
     />
   );

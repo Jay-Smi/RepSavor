@@ -1,5 +1,6 @@
 import { MRT_RowData } from 'mantine-react-table';
 import { FoodItemBase } from '@/models/food/FoodItemBase';
+import { ListQueryParamsSetStateActions } from '../../hooks/useListQueryParamState';
 import { ListQueryParams, ListQueryResult } from '../../types/query.types';
 import ItemGrid from './grid/ItemGrid';
 import ItemTable from './table/ItemTable';
@@ -8,7 +9,8 @@ type ViewMode = 'grid' | 'table';
 
 interface ItemListProps<T> {
   result: ListQueryResult<T>;
-  params: ListQueryParams<T>;
+  params: ListQueryParams;
+  handlers: ListQueryParamsSetStateActions;
   itemType: FoodItemBase['type'];
   viewMode?: ViewMode;
 }
@@ -20,12 +22,20 @@ interface ItemListProps<T> {
 function ItemList<T extends MRT_RowData>({
   result,
   params,
+  handlers,
   itemType,
   viewMode = 'grid',
 }: ItemListProps<T>) {
   switch (viewMode) {
     case 'table':
-      return <ItemTable<T> result={result} itemType={itemType} />;
+      return (
+        <ItemTable<T>
+          result={result}
+          itemType={itemType}
+          params={params}
+          handlers={handlers}
+        />
+      );
     case 'grid':
       return (
         <ItemGrid<T> result={result} itemType={itemType} params={params} />

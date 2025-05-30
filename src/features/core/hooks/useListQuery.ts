@@ -1,106 +1,110 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Table } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { FoodItemBase } from '@/models/food/FoodItemBase';
 import {
-  GroupedItem,
   ListItemsDataResponse,
   ListQueryParams,
   ListQueryResult,
 } from '../types/query.types';
 import {
-  applyFilters,
+  applyColumnFilters,
+  applyGlobalFilter,
   applyPagination,
-  groupItems,
   sortItems,
 } from '../utils/queryUtils';
 
-/**
- * Generic hook for any Table<T, number> list query.
- * Applies filters, pagination in IndexedDB, then sorts & groups in memory.
- */
-export function useListQuery<T extends { tags: string[] }>(
+export function useListQuery<T extends FoodItemBase>(
   table: Table<T, number>,
-  params?: ListQueryParams<T>
+  params: ListQueryParams = {}
 ): ListQueryResult<T> {
   const {
-    filters = [],
-    sort = [],
-    pagination = { pageIndex: 1, pageSize: Infinity },
-    groupBy = [],
-  } = params || {};
+    columnFilters = [],
+    columnFilterFns = {},
+    globalFilter,
+    sorting = [],
+    pagination = { pageIndex: 0, pageSize: Infinity },
+  } = params;
 
-  // A simple counter to force re-run
   const [trigger, setTrigger] = useState(0);
   const [isFetching, setIsFetching] = useState(false);
 
-  const data = useLiveQuery(async (): Promise<
-    ListItemsDataResponse<T> | Error
-  > => {
+  const liveData = useLiveQuery<ListItemsDataResponse<T> | Error>(async () => {
     setIsFetching(true);
-
     try {
-      let chain = applyFilters(table.toCollection(), filters);
+      let coll = applyGlobalFilter(table.toCollection(), globalFilter || '');
 
-      const total = await chain.count();
+      coll = applyColumnFilters(coll, columnFilters, columnFilterFns);
 
-      chain = applyPagination(chain, pagination);
+      const total = await coll.count();
 
-      let raw = await chain.toArray();
+      coll = applyPagination(coll, pagination);
 
-      if (sort.length) {
-        raw = sortItems(raw, sort);
+      let raw = await coll.toArray();
+
+      if (sorting.length) {
+        raw = sortItems(raw, sorting);
       }
 
-      const items: GroupedItem<T>[] =
-        groupBy.length > 0
-          ? groupItems(raw, groupBy)
-          : (raw as GroupedItem<T>[]);
+      await new Promise((r) => setTimeout(r, 300));
 
-      const result: ListItemsDataResponse<T> = {
-        items,
+      const allTags = new Set<string>();
+      raw.forEach((item) => {
+        if (item.tags && Array.isArray(item.tags)) {
+          item.tags.forEach((tag) => allTags.add(tag));
+        }
+      });
+
+      return {
+        items: raw,
         total,
-        page: pagination.pageIndex,
-        pageSize: pagination.pageSize,
+        allTags: Array.from(allTags),
       };
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      return result;
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
-      console.error(`error retrieving ${table.name}`, err);
-      return new Error(`Error retrieving ${table.name}: ${String(err)}`);
+      console.warn(`Error retrieving ${table.name}`, err);
+      return new Error(`Error retrieving ${table.name}: ${err.message}`);
     } finally {
       setIsFetching(false);
     }
   }, [
     table,
-    JSON.stringify(filters),
-    JSON.stringify(sort),
+    globalFilter,
+    JSON.stringify(columnFilters),
+    JSON.stringify(columnFilterFns),
+    JSON.stringify(sorting),
     JSON.stringify(pagination),
-    JSON.stringify(groupBy),
     trigger,
   ]);
 
   const refetch = useCallback(() => {
-    setTrigger((v) => v + 1);
+    setTrigger((t) => t + 1);
   }, []);
 
-  const isError = data instanceof Error;
+  const defaultData = useMemo(
+    () => ({
+      items: [],
+      total: undefined,
+      allTags: [],
+    }),
+    []
+  );
 
-  return isError
-    ? {
-        data: undefined,
-        status: 'error',
-        isFetching,
-        error: data,
-        refetch,
-      }
-    : {
-        data,
-        status: data ? 'success' : 'pending',
-        isFetching,
-        error: null,
-        refetch,
-      };
+  if (liveData instanceof Error) {
+    return {
+      data: defaultData,
+      status: 'error',
+      isFetching,
+      error: liveData,
+      refetch,
+    };
+  }
+
+  return {
+    data: liveData || defaultData,
+    status: liveData ? 'success' : 'pending',
+    isFetching,
+    error: null,
+    refetch,
+  };
 }

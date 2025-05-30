@@ -1,82 +1,98 @@
 import { Collection } from 'dexie';
 import {
-  FilterParams,
-  GroupedItem,
-  GroupParams,
-  PaginationParams,
-  SortByField,
-  SortByTag,
-  SortParams,
-} from '../types/query.types';
+  MRT_ColumnFilterFnsState,
+  MRT_ColumnFiltersState,
+  MRT_GroupingState,
+  MRT_SortingState,
+} from 'mantine-react-table';
+import { GroupedItem } from '../types/query.types';
+
+export function applyGlobalFilter<T>(
+  coll: Collection<T, number>,
+  globalFilter: string,
+  globalFilterFn?: (item: T, filter: string) => boolean
+): Collection<T, number> {
+  if (!globalFilter) {
+    return coll;
+  }
+
+  return coll.filter((item) => {
+    if (globalFilterFn) {
+      return globalFilterFn(item, globalFilter);
+    }
+
+    return Object.values(item as object).some(
+      (value) =>
+        (typeof value === 'string' &&
+          value.toLowerCase().includes(globalFilter.toLowerCase())) ||
+        (Array.isArray(value) &&
+          value.some(
+            (v) =>
+              typeof v === 'string' &&
+              v.toLowerCase().includes(globalFilter.toLowerCase())
+          )) ||
+        (typeof value === 'number' && String(value).includes(globalFilter))
+    );
+  });
+}
 
 /**
- * Apply filters on a Dexie Collection<T, number>.
- * Supports array‐valued fields by treating 'equals' as includes()
- * and 'contains' as any-element contains substring.
+ * Apply column filters (with their filter-fn keys) to a Dexie Collection.
  */
-export function applyFilters<T>(
+export function applyColumnFilters<T>(
   coll: Collection<T, number>,
-  filters: FilterParams<T, keyof T>[]
+  columnFilters: MRT_ColumnFiltersState = [],
+  columnFilterFns: MRT_ColumnFilterFnsState = {}
 ): Collection<T, number> {
-  let chain: Collection<T, number> = coll;
-  for (const { field, operator, value } of filters) {
-    chain = chain.filter((item: T) => {
-      const fieldValue = item[field];
-
-      // ARRAY‐BASED FIELDS
-      if (Array.isArray(fieldValue)) {
-        switch (operator) {
-          case 'equals':
-            return fieldValue.includes(value as any);
-          case 'contains':
-            return (fieldValue as unknown as string[]).some(
-              (el) =>
-                typeof el === 'string' &&
-                el.includes(value as unknown as string)
-            );
-          default:
-            // gt/lt etc. not supported on arrays
-            return false;
-        }
-      }
-
-      // NON‐ARRAY FIELDS
-      switch (operator) {
-        case 'equals':
-          if (typeof fieldValue === 'string' && typeof value === 'string') {
-            return fieldValue.toLowerCase() === value.toLowerCase();
-          }
-          return fieldValue === value;
-        case 'contains':
-          return (
-            typeof fieldValue === 'string' &&
-            (fieldValue as string).includes(value as unknown as string)
-          );
-        case 'gt':
-          return (fieldValue as any) > (value as any);
-        case 'lt':
-          return (fieldValue as any) < (value as any);
-        case 'gte':
-          return (fieldValue as any) >= (value as any);
-        case 'lte':
-          return (fieldValue as any) <= (value as any);
-        default:
-          return false;
-      }
-    }) as Collection<T, number>;
+  let chain = coll;
+  for (const { id: field, value } of columnFilters) {
+    const operator = columnFilterFns[field] ?? 'contains';
+    switch (operator) {
+      case 'equals':
+        chain = chain.filter((item) => item[field as keyof T] === value);
+        break;
+      case 'contains':
+        chain = chain.filter(
+          (item) =>
+            typeof item[field as keyof T] === 'string' &&
+            String(item[field as keyof T]).includes(String(value))
+        );
+        break;
+      case 'greaterThan':
+        chain = chain.filter(
+          (item) => (item[field as keyof T] as any) > (value as any)
+        );
+        break;
+      case 'lessThan':
+        chain = chain.filter(
+          (item) => (item[field as keyof T] as any) < (value as any)
+        );
+        break;
+      case 'greaterThanOrEqualTo':
+        chain = chain.filter(
+          (item) => (item[field as keyof T] as any) >= (value as any)
+        );
+        break;
+      case 'lessThanOrEqualTo':
+        chain = chain.filter(
+          (item) => (item[field as keyof T] as any) <= (value as any)
+        );
+        break;
+      // add other custom operators here if needed
+    }
   }
   return chain;
 }
 
 /**
- * Apply pagination on a Dexie Collection<T, number>.
- * Clamps page numbers below 1 to page 1.
+ * Paginate a Dexie Collection<T, number>.
+ * Clamps negative pageIndex to 0.
  */
 export function applyPagination<T>(
   chain: Collection<T, number>,
-  { pageIndex, pageSize }: PaginationParams
+  { pageIndex, pageSize }: { pageIndex: number; pageSize: number }
 ): Collection<T, number> {
-  const effectivePage = pageIndex < 0 ? 0 : pageIndex;
+  const effectivePage = Math.max(0, pageIndex);
   const offset = effectivePage * pageSize;
 
   if (!Number.isFinite(pageSize)) {
@@ -94,7 +110,7 @@ export function applyPagination<T>(
  */
 export function groupItems<T>(
   items: T[],
-  fields: GroupParams<T>
+  fields: MRT_GroupingState
 ): GroupedItem<T>[] {
   // no grouping requested → just return raw items
   if (fields.length === 0) {
@@ -133,35 +149,19 @@ export function groupItems<T>(
 }
 
 /**
- * Sort an array of items by multiple fields in-memory.
- * If a field value is an array, JSON-stringify both sides for lexicographic compare.
+ * In-memory sort.
  */
-export function sortItems<T>(items: T[], sortParams: SortParams<T>[]): T[] {
+export function sortItems<T>(items: T[], sorting: MRT_SortingState): T[] {
   return [...items].sort((a, b) => {
-    for (const spec of sortParams) {
-      if (spec.type === 'field') {
-        const { field, direction } = spec as SortByField<T, keyof T>;
-        const aVal = a[field],
-          bVal = b[field];
-        if (aVal! < bVal!) {
-          return direction === 'asc' ? -1 : 1;
-        }
-        if (aVal! > bVal!) {
-          return direction === 'asc' ? 1 : -1;
-        }
-      } else {
-        // spec.type === 'tag'
-        const { value: tag, direction } = spec as SortByTag<T>;
-        const aHas =
-          Array.isArray((a as any).tags) && (a as any).tags.includes(tag);
-        const bHas =
-          Array.isArray((b as any).tags) && (b as any).tags.includes(tag);
-        if (aHas !== bHas) {
-          // truthy sorts “after” in asc, or “before” in desc
-          return direction === 'asc' ? (aHas ? 1 : -1) : aHas ? -1 : 1;
-        }
+    for (const { id: key, desc } of sorting) {
+      const aVal = (a as any)[key];
+      const bVal = (b as any)[key];
+      if (aVal < bVal) {
+        return desc ? 1 : -1;
       }
-      // if equal on this spec, continue to next
+      if (aVal > bVal) {
+        return desc ? -1 : 1;
+      }
     }
     return 0;
   });

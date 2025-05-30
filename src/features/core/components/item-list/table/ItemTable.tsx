@@ -1,21 +1,26 @@
 import {
   MantineReactTable,
   MRT_ColumnDef,
-  MRT_ColumnFilterFnsState,
-  MRT_ColumnFiltersState,
-  MRT_FilterFns,
-  MRT_GroupingState,
-  MRT_PaginationState,
   MRT_RowData,
-  MRT_SortingState,
   useMantineReactTable,
 } from 'mantine-react-table';
-import { ListQueryResult } from '@/features/core/types/query.types';
+import {
+  ListQueryParams,
+  ListQueryResult,
+} from '@/features/core/types/query.types';
 
 import 'mantine-react-table/styles.css';
 
-import { useMemo, useState } from 'react';
-import { Badge, Group, MultiSelectProps } from '@mantine/core';
+import { useMemo } from 'react';
+import { IconRefresh } from '@tabler/icons-react';
+import {
+  ActionIcon,
+  Badge,
+  Group,
+  MultiSelectProps,
+  Tooltip,
+} from '@mantine/core';
+import { ListQueryParamsSetStateActions } from '@/features/core/hooks/useListQueryParamState';
 import { stringToHSL } from '@/features/core/utils/color-utils';
 import { Recipe } from '@/models/food/food-item/Recipe';
 import { FoodItemBase } from '@/models/food/FoodItemBase';
@@ -23,6 +28,8 @@ import { FoodItemBase } from '@/models/food/FoodItemBase';
 interface ItemTableProps<TData extends MRT_RowData> {
   result: ListQueryResult<TData>;
   itemType: FoodItemBase['type'];
+  params: ListQueryParams;
+  handlers: ListQueryParamsSetStateActions;
 }
 
 const renderMultiSelectOption: MultiSelectProps['renderOption'] = ({
@@ -122,59 +129,26 @@ const getColumns = (type: FoodItemBase['type'], allTags: string[]) => {
 function ItemTable<TData extends MRT_RowData>({
   result,
   itemType,
+  params,
+  handlers,
 }: ItemTableProps<TData>) {
-  const { data: initData, status, isFetching, error, refresh } = result;
+  const { data, status, isFetching, error, refetch } = result;
 
-  const data = (initData?.items as TData[]) || [];
+  const { items, total, allTags } = data;
+
+  const { grouping, ...restParams } = params;
+
+  const {
+    setColumnFilters,
+    setColumnFilterFns,
+    setGlobalFilter,
+    setSorting,
+    setPagination,
+  } = handlers;
 
   // ** global state ** //
 
   // ** local state ** //
-  // {
-  //   id: string;
-  //   value: unknown;
-  // }[]
-  const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>(
-    []
-  );
-
-  // Record<string, filterFn>
-  const [columnFilterFns, setColumnFilterFns] = //filter modes
-    useState<MRT_ColumnFilterFnsState>(
-      Object.fromEntries(
-        columns.map(({ accessorKey }) => [accessorKey, 'contains'])
-      )
-    );
-
-  const [globalFilter, setGlobalFilter] = useState('');
-
-  // {
-  //   desc: boolean;
-  //   id: string;
-  // }[]
-  const [sorting, setSorting] = useState<MRT_SortingState>([]);
-
-  // {
-  //   pageIndex: number;
-  //   pageSize: number;
-  // }
-  const [pagination, setPagination] = useState<MRT_PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-
-  const allTags = useMemo(() => {
-    const allTagsSet = new Set<string>();
-    data.forEach((item) => {
-      if (item.tags) {
-        (item.tags as string[]).forEach((tag) => {
-          allTagsSet.add(tag);
-        });
-      }
-    });
-    return Array.from(allTagsSet);
-  }, [data]);
-
   const columns: MRT_ColumnDef<TData>[] = useMemo(
     () => getColumns(itemType, allTags) as MRT_ColumnDef<TData>[],
     [allTags]
@@ -182,9 +156,50 @@ function ItemTable<TData extends MRT_RowData>({
 
   const table = useMantineReactTable({
     columns,
-    data,
-    enableGrouping: true,
+    data: items,
     layoutMode: 'grid',
+    enableGrouping: true,
+    enableColumnFilterModes: true,
+    columnFilterModeOptions: [
+      'contains',
+      'equals',
+      'greaterThan',
+      'lessThan',
+      'greaterThanOrEqualTo',
+      'lessThanOrEqualTo',
+    ],
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    state: {
+      ...restParams,
+      showAlertBanner: status === 'error',
+      showProgressBars: isFetching,
+      showSkeletons: status === 'pending',
+    },
+    rowCount: total,
+    onColumnFilterFnsChange: setColumnFilterFns,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    mantineToolbarAlertBannerProps: error
+      ? {
+          color: 'red',
+          children: `Error: ${error.message}`,
+        }
+      : undefined,
+    renderTopToolbarCustomActions: () => (
+      <Tooltip label="Refresh Data">
+        <ActionIcon
+          variant="subtle"
+          color="var(--mantine-color-bright)"
+          onClick={() => refetch()}
+        >
+          <IconRefresh />
+        </ActionIcon>
+      </Tooltip>
+    ),
   });
 
   // ** local vars ** //

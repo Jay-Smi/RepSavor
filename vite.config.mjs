@@ -9,6 +9,14 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
   ],
+  resolve: {
+    alias: [
+      {
+        find: '@tabler/icons-react',
+        replacement: '@tabler/icons-react/dist/esm/icons/index.mjs',
+      },
+    ],
+  },
   test: {
     globals: true,
     environment: 'jsdom',
