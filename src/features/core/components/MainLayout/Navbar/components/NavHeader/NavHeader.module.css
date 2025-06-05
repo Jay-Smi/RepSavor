@@ -1,0 +1,9 @@
+.container {
+  height: $default-header-height;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-content: center;
+}
+.container[data-opened='true'] {
+  justify-content: space-between;
+}

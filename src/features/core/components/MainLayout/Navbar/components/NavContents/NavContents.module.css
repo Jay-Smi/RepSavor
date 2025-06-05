@@ -1,0 +1,10 @@
+.container {
+  gap: var(--default-padding);
+  padding-left: var(--default-padding);
+  padding-right: var(--default-padding);
+}
+
+.text {
+  padding-left: var(--default-padding);
+  padding-right: var(--default-padding);
+}

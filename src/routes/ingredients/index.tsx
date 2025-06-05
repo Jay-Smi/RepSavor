@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router';
+import { Card } from '@mantine/core';
 
 export const Route = createFileRoute('/ingredients/')({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  return <div>Hello "/ingedients/"!</div>
+  return <Card h="400px" w="300px" />;
 }

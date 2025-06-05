@@ -2,9 +2,57 @@ import '@mantine/core/styles.css';
 
 import React, { useEffect } from 'react';
 import { addons } from '@storybook/preview-api';
+import type { PartialStoryFn, StoryContext } from '@storybook/types';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router';
 import { DARK_MODE_EVENT_NAME } from 'storybook-dark-mode';
-import { MantineProvider, useMantineColorScheme } from '@mantine/core';
-import { theme } from '../src/theme';
+import { useMantineColorScheme } from '@mantine/core';
+import { ThemeProvider } from '../src/features/core/providers/ThemeProvider';
+
+export default function withRouter(
+  Story: PartialStoryFn,
+  { parameters }: StoryContext
+) {
+  const {
+    initialEntries = ['/'],
+    initialIndex,
+    routes = ['*'],
+  } = parameters?.router || {};
+
+  const rootRoute = createRootRoute();
+
+  const children = routes.map((path) =>
+    createRoute({
+      path,
+      getParentRoute: () => rootRoute,
+      component: Story,
+    })
+  );
+
+  rootRoute.addChildren(children);
+
+  const router = createRouter({
+    history: createMemoryHistory({ initialEntries, initialIndex }),
+    routeTree: rootRoute,
+  });
+
+  return <RouterProvider router={router} />;
+}
+
+declare module '@storybook/types' {
+  interface Parameters {
+    router?: {
+      initialEntries?: string[];
+      initialIndex?: number;
+      routes?: string[];
+    };
+  }
+}
 
 const channel = addons.getChannel();
 
@@ -32,7 +80,6 @@ export const decorators = [
   (renderStory: any) => (
     <ColorSchemeWrapper>{renderStory()}</ColorSchemeWrapper>
   ),
-  (renderStory: any) => (
-    <MantineProvider theme={theme}>{renderStory()}</MantineProvider>
-  ),
+  (renderStory: any) => <ThemeProvider>{renderStory()}</ThemeProvider>,
+  withRouter,
 ];

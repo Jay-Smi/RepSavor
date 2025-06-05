@@ -6,13 +6,13 @@ import {
   ListItemsDataResponse,
   ListQueryParams,
   ListQueryResult,
-} from '../types/query.types';
+} from '../../types/query.types';
 import {
   applyColumnFilters,
   applyGlobalFilter,
   applyPagination,
   sortItems,
-} from '../utils/queryUtils';
+} from '../../utils/queryUtils';
 
 export function useListQuery<T extends FoodItemBase>(
   table: Table<T, number>,

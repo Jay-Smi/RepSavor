@@ -1,0 +1,27 @@
+.container {
+  height: 100%;
+  padding: $default-spacing;
+
+  @mixin larger-than $mantine-breakpoint-sm {
+    padding-right: 0px;
+  }
+}
+
+.card {
+  height: 100%;
+  padding: 0px;
+}
+
+.section {
+  padding-left: $default-spacing;
+  padding-right: $default-spacing;
+}
+
+.lastSection {
+  padding-bottom: $default-spacing;
+}
+
+.divider {
+  margin-left: $default-spacing;
+  margin-right: $default-spacing;
+}

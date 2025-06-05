@@ -6,7 +6,7 @@ import {
   MRT_PaginationState,
   MRT_SortingState,
 } from 'mantine-react-table';
-import { ListQueryParams } from '../types/query.types';
+import { ListQueryParams } from '../../types/query.types';
 
 export type ListQueryParamsSetStateActions = {
   setColumnFilters: Dispatch<SetStateAction<MRT_ColumnFiltersState>>;

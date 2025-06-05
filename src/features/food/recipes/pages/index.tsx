@@ -1,11 +1,9 @@
-import ItemList from '@/features/core/components/item-list/ItemList';
-import { useListQueryParamState } from '@/features/core/hooks/useListQueryParamState';
+import ItemList from '@/features/core/components/ItemList/ItemList';
+import { useListQueryParamState } from '@/features/core/hooks/state/useListQueryParamState';
 import { Recipe } from '@/models/food/food-item/Recipe';
 import { useRecipes } from '../hooks/useRecipes';
 
-interface RecipesPageProps {}
-
-const RecipesPage = ({}: RecipesPageProps) => {
+const RecipesPage = () => {
   // ** global state ** //
   const [params, handlers] = useListQueryParamState();
 
