@@ -1,4 +1,4 @@
-import { useListQuery } from '@/features/core/hooks/queries/useListQuery';
+import { useListQuery } from '@/features/core/hooks/queries/useListQuery/useListQuery';
 import {
   ListQueryParams,
   ListQueryResult,

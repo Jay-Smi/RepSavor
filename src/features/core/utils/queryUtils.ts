@@ -36,9 +36,6 @@ export function applyGlobalFilter<T>(
   });
 }
 
-/**
- * Apply column filters (with their filter-fn keys) to a Dexie Collection.
- */
 export function applyColumnFilters<T>(
   coll: Collection<T, number>,
   columnFilters: MRT_ColumnFiltersState = [],
@@ -78,16 +75,11 @@ export function applyColumnFilters<T>(
           (item) => (item[field as keyof T] as any) <= (value as any)
         );
         break;
-      // add other custom operators here if needed
     }
   }
   return chain;
 }
 
-/**
- * Paginate a Dexie Collection<T, number>.
- * Clamps negative pageIndex to 0.
- */
 export function applyPagination<T>(
   chain: Collection<T, number>,
   { pageIndex, pageSize }: { pageIndex: number; pageSize: number }
@@ -101,46 +93,34 @@ export function applyPagination<T>(
   return chain.offset(offset).limit(pageSize);
 }
 
-/**
- * Recursively group items by the given list of keys.
- *
- * - If items[*][key] is an Array, each element in that array becomes its own bucket.
- * - Otherwise, we bucket by `String(item[key])`.
- * - Items may appear in multiple buckets if the field is an array.
- */
 export function groupItems<T>(
   items: T[],
   fields: MRT_GroupingState
 ): GroupedItem<T>[] {
-  // no grouping requested → just return raw items
   if (fields.length === 0) {
     return items as GroupedItem<T>[];
   }
 
   const [firstKey, ...restKeys] = fields;
 
-  // stage 1: build buckets: map bucketName → T[]
   const buckets: Record<string, T[]> = {};
   for (const it of items) {
     const val = (it as any)[firstKey];
     if (Array.isArray(val)) {
-      // explode array: each element becomes its own bucket
       for (const entry of val) {
         const name = String(entry);
         (buckets[name] ||= []).push(it);
       }
     } else {
-      // normal scalar field
       const name = val == null ? 'undefined' : String(val);
       (buckets[name] ||= []).push(it);
     }
   }
 
-  // stage 2: turn each bucket into a GroupRow
   return Object.entries(buckets).map(([bucketName, bucketItems]) => {
-    const row: any = {
+    const row = {
       [firstKey as string]: bucketName,
-      subRows: restKeys.length
+      subItems: restKeys.length
         ? groupItems(bucketItems, restKeys)
         : (bucketItems as GroupedItem<T>[]),
     };
@@ -148,9 +128,6 @@ export function groupItems<T>(
   });
 }
 
-/**
- * In-memory sort.
- */
 export function sortItems<T>(items: T[], sorting: MRT_SortingState): T[] {
   return [...items].sort((a, b) => {
     for (const { id: key, desc } of sorting) {

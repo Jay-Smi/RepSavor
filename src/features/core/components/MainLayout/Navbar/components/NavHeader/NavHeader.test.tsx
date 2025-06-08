@@ -1,7 +1,7 @@
 import { render, screen, userEvent } from '@test-utils';
 import { NavHeader } from './NavHeader';
 
-vi.mock('../../../AppLogo', () => ({
+vi.mock('../../../../AppLogo', () => ({
   AppLogo: () => <div data-testid="app-logo">MockedLogo</div>,
 }));
 

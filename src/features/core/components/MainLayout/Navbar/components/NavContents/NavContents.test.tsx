@@ -4,7 +4,9 @@ import { NavContents } from './NavContents';
 
 describe('NavContents component', () => {
   it('renders no header text when opened=false', async () => {
-    const { container } = await render(<NavContents opened={false} />);
+    const { container } = await render(
+      <NavContents navLinks={navLinks} opened={false} />
+    );
 
     expect(screen.queryByText('Navigation')).toBeNull();
 
@@ -17,7 +19,9 @@ describe('NavContents component', () => {
   });
 
   it('renders header text and link labels when opened=true', async () => {
-    const { container } = await render(<NavContents opened />);
+    const { container } = await render(
+      <NavContents navLinks={navLinks} opened />
+    );
 
     // 1) "Navigation" header should appear
     expect(screen.getByText('Navigation')).toBeInTheDocument();

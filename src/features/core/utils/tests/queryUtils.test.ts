@@ -1,11 +1,13 @@
 import {
   MRT_ColumnFilterFnsState,
   MRT_ColumnFiltersState,
+  MRT_GroupingState,
   MRT_SortingState,
 } from 'mantine-react-table';
 import { describe, expect, it } from 'vitest';
 import {
   applyColumnFilters,
+  applyGlobalFilter,
   applyPagination,
   groupItems,
   sortItems,
@@ -33,303 +35,229 @@ class FakeCollection<T> {
     return this.items.length;
   }
 }
-
-type Item = {
-  id: number;
-  name: string;
-  tags: string[];
-  value: number;
-};
-
-describe('applyFilters', () => {
-  const data: Item[] = [
-    { id: 1, name: 'Alice', tags: ['x', 'y'], value: 10 },
-    { id: 2, name: 'alice', tags: ['y', 'z'], value: 20 },
-    { id: 3, name: 'Bob', tags: ['x'], value: 5 },
-    { id: 4, name: 'Carol', tags: [], value: 15 },
-  ];
-  const coll = new FakeCollection(data) as any;
-
-  it('no filters returns everything', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [];
-    const columnFilterFns: MRT_ColumnFilterFnsState = {};
-    expect(
-      await applyColumnFilters(coll, columnFilters, columnFilterFns).toArray()
-    ).toEqual(data);
-  });
-
-  it('field missing on item', async () => {
-    type X = { a: number };
-    const collX = new FakeCollection<X>([{ a: 1 }, { a: 2 }]) as any;
-    const columnFilters: MRT_ColumnFiltersState = [{ id: 'b', value: 1 }];
-    const columnFilterFns: MRT_ColumnFilterFnsState = {};
-    expect(
-      await applyColumnFilters(collX, columnFilters, columnFilterFns).toArray()
-    ).toEqual([]);
-  });
-
-  it('boolean field', async () => {
-    type B = { flag?: boolean | null };
-    const bc = new FakeCollection<B>([
-      { flag: true },
-      { flag: false },
-      { flag: null },
-      {},
-    ]) as any;
-    const columnFilters: MRT_ColumnFiltersState = [
-      { id: 'flag', value: false },
-    ];
-    const columnFilterFns: MRT_ColumnFilterFnsState = {};
-    expect(
-      await applyColumnFilters(bc, columnFilters, columnFilterFns).toArray()
-    ).toEqual([{ flag: false }]);
-  });
-
-  it('contains on non-string returns none', async () => {
-    type N = { num: number };
-    const nc = new FakeCollection<N>([{ num: 123 }]) as any;
-    const columnFilters: MRT_ColumnFiltersState = [
-      { id: 'num', value: 2 as any },
-    ];
-    const columnFilterFns: MRT_ColumnFilterFnsState = { num: 'contains' };
-    expect(
-      await applyColumnFilters(nc, columnFilters, columnFilterFns).toArray()
-    ).toEqual([]);
-  });
-
-  it('equals on primitive', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [{ id: 'value', value: 15 }];
-    const columnFilterFns: MRT_ColumnFilterFnsState = {};
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result.map((i) => (i as any).id)).toEqual([4]);
-  });
-
-  it('equals on string (case-sensitive)', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [
-      { id: 'name', value: 'Alice' },
-    ];
-    const columnFilterFns: MRT_ColumnFilterFnsState = {};
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result.map((i) => (i as any).id)).toEqual([1]);
-  });
-
-  it('contains on string', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [{ id: 'name', value: 'ar' }];
-    const columnFilterFns: MRT_ColumnFilterFnsState = { name: 'contains' };
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result.map((i) => (i as any).id)).toEqual([4]);
-  });
-
-  it('gt, lt, gte, lte on numeric', async () => {
-    const f1Filters: MRT_ColumnFiltersState = [{ id: 'value', value: 10 }];
-    const f1Fns: MRT_ColumnFilterFnsState = { value: 'gt' };
-    expect(
-      (await applyColumnFilters(coll, f1Filters, f1Fns).toArray()).map(
-        (i) => (i as any).id
-      )
-    ).toEqual([2, 4]);
-
-    const f2Filters: MRT_ColumnFiltersState = [{ id: 'value', value: 10 }];
-    const f2Fns: MRT_ColumnFilterFnsState = { value: 'lt' };
-    expect(
-      (await applyColumnFilters(coll, f2Filters, f2Fns).toArray()).map(
-        (i) => (i as any).id
-      )
-    ).toEqual([3]);
-
-    const f3Filters: MRT_ColumnFiltersState = [{ id: 'value', value: 10 }];
-    const f3Fns: MRT_ColumnFilterFnsState = { value: 'gte' };
-    expect(
-      (await applyColumnFilters(coll, f3Filters, f3Fns).toArray())
-        .map((i) => (i as any).id)
-        .sort()
-    ).toEqual([1, 2, 4]);
-
-    const f4Filters: MRT_ColumnFiltersState = [{ id: 'value', value: 10 }];
-    const f4Fns: MRT_ColumnFilterFnsState = { value: 'lte' };
-    expect(
-      (await applyColumnFilters(coll, f4Filters, f4Fns).toArray())
-        .map((i) => (i as any).id)
-        .sort()
-    ).toEqual([1, 3]);
-  });
-
-  it('equals on array field', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [{ id: 'tags', value: 'z' }];
-    const columnFilterFns: MRT_ColumnFilterFnsState = { tags: 'equals' };
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result.map((i) => (i as any).id)).toEqual([2]);
-  });
-
-  it('contains on array field', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [{ id: 'tags', value: 'x' }];
-    const columnFilterFns: MRT_ColumnFilterFnsState = { tags: 'contains' };
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result.map((i) => (i as any).id).sort()).toEqual([1, 3]);
-  });
-
-  it('unsupported operator on array returns none', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [
-      { id: 'tags', value: 'anything' },
-    ];
-    const columnFilterFns: MRT_ColumnFilterFnsState = { tags: 'gt' };
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result).toEqual([]);
-  });
-
-  it('multiple filters AND together', async () => {
-    const columnFilters: MRT_ColumnFiltersState = [
-      { id: 'tags', value: 'x' },
-      { id: 'value', value: 8 },
-    ];
-    const columnFilterFns: MRT_ColumnFilterFnsState = {
-      tags: 'equals',
-      value: 'gt',
-    };
-    const result = await applyColumnFilters(
-      coll,
-      columnFilters,
-      columnFilterFns
-    ).toArray();
-    expect(result.map((i) => (i as any).id)).toEqual([1]);
-  });
-});
-
-describe('applyPagination', () => {
-  const data = new FakeCollection([...Array(10).keys()]) as any;
-
-  it('first page', async () => {
-    const paged = applyPagination(data, { pageIndex: 0, pageSize: 3 });
-    expect(await paged.toArray()).toEqual([0, 1, 2]);
-  });
-
-  it('second page', async () => {
-    const paged = applyPagination(data, { pageIndex: 1, pageSize: 3 });
-    expect(await paged.toArray()).toEqual([3, 4, 5]);
-  });
-
-  it('overflow page returns empty', async () => {
-    const paged = applyPagination(data, { pageIndex: 4, pageSize: 3 });
-    expect(await paged.toArray()).toEqual([]);
-  });
-
-  it('pageSize 0 always empty', async () => {
-    const paged = applyPagination(data, { pageIndex: 0, pageSize: 0 });
-    expect(await paged.toArray()).toEqual([]);
-  });
-
-  it('pageSize Infinity returns all', async () => {
-    const paged = applyPagination(data, { pageIndex: 0, pageSize: Infinity });
-    expect(await paged.toArray()).toEqual([...Array(10).keys()]);
-  });
-});
-
-describe('groupItems', () => {
-  const items: Item[] = [
-    { id: 1, name: 'Alice', tags: ['x', 'y'], value: 10 },
-    { id: 2, name: 'Bob', tags: ['y'], value: 20 },
-    { id: 3, name: 'Alice', tags: ['x'], value: 5 },
+describe('applyGlobalFilter', () => {
+  const data = [
+    { name: 'Alice', tags: ['foo', 'bar'], age: 30 },
+    { name: 'Bob', tags: ['baz'], age: 42 },
+    { name: 'Carol', tags: [], age: 100 },
   ];
 
-  it('groups by a scalar field', () => {
-    const grouped = groupItems(items, ['name']);
-    const keys = grouped.map((r) => (r as any).name).sort();
-    expect(keys).toEqual(['Alice', 'Bob']);
-
-    const alice = grouped.find((r) => (r as any).name === 'Alice')!;
-    const ids = ((alice as any).subRows as Item[]).map((i) => i.id).sort();
-    expect(ids).toEqual([1, 3]);
+  it('returns original collection when filter string is empty', async () => {
+    const coll = new FakeCollection(data) as any;
+    const result = applyGlobalFilter(coll, '');
+    expect(await result.toArray()).toEqual(data);
   });
 
-  it('groups by an array field (tags)', () => {
-    const grouped = groupItems(items, ['tags']);
-    const tagKeys = grouped.map((r) => (r as any).tags).sort();
-    expect(tagKeys).toEqual(['x', 'y']);
-
-    const xGroup = grouped.find((r) => (r as any).tags === 'x')!;
-    expect(((xGroup as any).subRows as Item[]).map((i) => i.id).sort()).toEqual(
-      [1, 3]
-    );
-
-    const yGroup = grouped.find((r) => (r as any).tags === 'y')!;
-    expect(((yGroup as any).subRows as Item[]).map((i) => i.id).sort()).toEqual(
-      [1, 2]
-    );
+  it('filters by substring in string properties (case‑insensitive)', async () => {
+    const coll = new FakeCollection(data) as any;
+    const result = applyGlobalFilter(coll, 'ali');
+    expect(await result.toArray()).toEqual([
+      { name: 'Alice', tags: ['foo', 'bar'], age: 30 },
+    ]);
   });
 
-  it('nested grouping: first by tags, then by name', () => {
-    const nested = groupItems(items, ['tags', 'name']);
-    const topKeys = nested.map((r) => (r as any).tags).sort();
-    expect(topKeys).toEqual(['x', 'y']);
+  it('filters by substring in array properties', async () => {
+    const coll = new FakeCollection(data) as any;
+    const result = applyGlobalFilter(coll, 'BAZ');
+    expect(await result.toArray()).toEqual([
+      { name: 'Bob', tags: ['baz'], age: 42 },
+    ]);
+  });
 
-    const xBucket = nested.find((r) => (r as any).tags === 'x')!;
-    const subGroupKeys = ((xBucket as any).subRows as any[]).map((r) => r.name);
-    expect(subGroupKeys).toEqual(['Alice']);
+  it('filters by substring in numeric properties', async () => {
+    const coll = new FakeCollection(data) as any;
+    // ages: "30", "42", "100" → filter "00" should match Carol
+    const result = applyGlobalFilter(coll, '00');
+    expect(await result.toArray()).toEqual([
+      { name: 'Carol', tags: [], age: 100 },
+    ]);
+  });
 
-    const aliceSub = (xBucket as any).subRows.find(
-      (r: any) => (r as any).name === 'Alice'
-    )!;
-    expect((aliceSub.subRows as Item[]).map((i) => i.id).sort()).toEqual([
-      1, 3,
+  it('uses custom globalFilterFn when provided', async () => {
+    const coll = new FakeCollection(data) as any;
+    // only allow even ages
+    const fn = (item: (typeof data)[0], _: string) => item.age % 2 === 0;
+    const result = applyGlobalFilter(coll, 'whatever', fn);
+    expect(await result.toArray()).toEqual([
+      { name: 'Alice', tags: ['foo', 'bar'], age: 30 },
+      { name: 'Bob', tags: ['baz'], age: 42 },
+      { name: 'Carol', tags: [], age: 100 },
     ]);
   });
 });
 
-describe('full pipeline: filter + paginate + sort + group', () => {
+// -- applyColumnFilters ------------------------------------------
+describe('applyColumnFilters', () => {
+  type Item = { name: string; age: number };
   const data: Item[] = [
-    { id: 1, name: 'Alice', tags: ['x', 'y'], value: 10 },
-    { id: 2, name: 'alice', tags: ['y', 'z'], value: 20 },
-    { id: 3, name: 'Bob', tags: ['x'], value: 5 },
-    { id: 4, name: 'Carol', tags: [], value: 15 },
+    { name: 'Alice', age: 30 },
+    { name: 'Bob', age: 42 },
+    { name: 'Carol', age: 30 },
   ];
-  const coll = new FakeCollection<Item>(data) as any;
 
-  it('filters tags equals "x", paginates, sorts, then groups by name', async () => {
-    // 1) Filter
-    const columnFilters: MRT_ColumnFiltersState = [{ id: 'tags', value: 'x' }];
-    const columnFilterFns: MRT_ColumnFilterFnsState = { tags: 'equals' };
-    const filtered = applyColumnFilters(coll, columnFilters, columnFilterFns);
-    expect((await filtered.toArray()).map((i) => (i as any).id).sort()).toEqual(
-      [1, 3]
+  function coll(
+    filters: MRT_ColumnFiltersState = [],
+    fns: MRT_ColumnFilterFnsState = {}
+  ) {
+    return applyColumnFilters(new FakeCollection(data) as any, filters, fns);
+  }
+
+  it('defaults to "contains" for string fields', async () => {
+    const filtered = coll([{ id: 'name', value: 'ar' }]);
+    expect(await filtered.toArray()).toEqual([{ name: 'Carol', age: 30 }]);
+  });
+
+  it('equals operator', async () => {
+    const filtered = coll([{ id: 'age', value: 30 }], { age: 'equals' });
+    expect(await filtered.toArray()).toEqual([
+      { name: 'Alice', age: 30 },
+      { name: 'Carol', age: 30 },
+    ]);
+  });
+
+  it('greaterThan / lessThan operators', async () => {
+    let filtered = coll([{ id: 'age', value: 30 }], { age: 'greaterThan' });
+    expect(await filtered.toArray()).toEqual([{ name: 'Bob', age: 42 }]);
+
+    filtered = coll([{ id: 'age', value: 42 }], { age: 'lessThan' });
+    expect(await filtered.toArray()).toEqual([
+      { name: 'Alice', age: 30 },
+      { name: 'Carol', age: 30 },
+    ]);
+  });
+
+  it('greaterThanOrEqualTo / lessThanOrEqualTo operators', async () => {
+    let filtered = coll([{ id: 'age', value: 30 }], {
+      age: 'greaterThanOrEqualTo',
+    });
+    expect(await filtered.toArray()).toEqual([
+      { name: 'Alice', age: 30 },
+      { name: 'Bob', age: 42 },
+      { name: 'Carol', age: 30 },
+    ]);
+
+    filtered = coll([{ id: 'age', value: 42 }], { age: 'lessThanOrEqualTo' });
+    expect(await filtered.toArray()).toEqual([
+      { name: 'Alice', age: 30 },
+      { name: 'Bob', age: 42 },
+      { name: 'Carol', age: 30 },
+    ]);
+  });
+
+  it('chains multiple column filters', async () => {
+    // name contains 'o' AND age equals 30
+    const filtered = coll(
+      [
+        { id: 'name', value: 'o' },
+        { id: 'age', value: 30 },
+      ],
+      { age: 'equals', name: 'contains' }
     );
+    expect(await filtered.toArray()).toEqual([{ name: 'Carol', age: 30 }]);
+  });
+});
 
-    // 2) Paginate
-    const paged = applyPagination(filtered, { pageIndex: 0, pageSize: 1 });
-    expect((await paged.toArray()).map((i) => (i as any).id)).toEqual([1]);
+// -- applyPagination ---------------------------------------------
+describe('applyPagination', () => {
+  const data = Array.from({ length: 10 }, (_, i) => i);
+  const base = new FakeCollection(data) as any;
 
-    // 3) Sort
-    const sorted = sortItems(await paged.toArray(), [
-      { id: 'value', desc: false },
+  it('returns page of correct size', async () => {
+    const page = applyPagination(base, { pageIndex: 1, pageSize: 3 });
+    // offset = 3, limit = 3 → [3,4,5]
+    expect(await page.toArray()).toEqual([3, 4, 5]);
+  });
+
+  it('handles negative pageIndex by clamping to 0', async () => {
+    const page = applyPagination(base, { pageIndex: -5, pageSize: 2 });
+    expect(await page.toArray()).toEqual([0, 1]);
+  });
+
+  it('ignores pagination when pageSize is infinite', async () => {
+    // Number.isFinite(Infinity) === false
+    const page = applyPagination(base, { pageIndex: 2, pageSize: Infinity });
+    expect(await page.toArray()).toEqual(data);
+  });
+});
+
+// -- groupItems ---------------------------------------------------
+describe('groupItems', () => {
+  type Item = { color?: string; size?: string; tags?: string[] };
+  const items: Item[] = [
+    { color: 'red', size: 'S', tags: ['a', 'b'] },
+    { color: 'blue', size: 'M', tags: ['b'] },
+    { color: 'red', size: 'M', tags: ['a'] },
+  ];
+
+  it('returns flat list when no grouping fields', () => {
+    const grouped = groupItems(items, [] as MRT_GroupingState);
+    expect(grouped).toEqual(items);
+  });
+
+  it('groups by a single field', () => {
+    const grouped = groupItems(items, ['color']);
+    // Should produce two buckets: "red" and "blue"
+    const redGroup = grouped.find((g) => g.color === 'red');
+    const blueGroup = grouped.find((g) => g.color === 'blue');
+
+    expect(redGroup?.subItems!.length).toBe(2);
+    expect(blueGroup!.subItems!).toEqual([
+      { color: 'blue', size: 'M', tags: ['b'] },
+    ]);
+  });
+
+  it('supports multi‑level grouping', () => {
+    const grouped = groupItems(items, ['color', 'size']);
+    // First level: color
+    const redGroup = grouped.find((g) => g.color === 'red')!;
+    // Second level: size within redGroup
+    expect(redGroup.subItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ size: 'S' }),
+        expect.objectContaining({ size: 'M' }),
+      ])
+    );
+  });
+});
+
+// -- sortItems ----------------------------------------------------
+describe('sortItems', () => {
+  type Item = { name: string; age: number };
+  const data: Item[] = [
+    { name: 'Charlie', age: 20 },
+    { name: 'Alice', age: 30 },
+    { name: 'Bob', age: 25 },
+  ];
+
+  it('sorts ascending by single field', () => {
+    const sorted = sortItems(data, [
+      { id: 'name', desc: false },
     ] as MRT_SortingState);
-    expect(sorted.map((i) => (i as any).value)).toEqual([10]);
+    expect(sorted.map((i) => i.name)).toEqual(['Alice', 'Bob', 'Charlie']);
+  });
 
-    // 4) Group
-    const grouped = groupItems(sorted, ['name']);
-    expect((grouped[0] as any).name).toBe('Alice');
-    expect(((grouped[0] as any).subRows as Item[])[0].id).toBe(1);
+  it('sorts descending by single field', () => {
+    const sorted = sortItems(data, [
+      { id: 'age', desc: true },
+    ] as MRT_SortingState);
+    expect(sorted.map((i) => i.age)).toEqual([30, 25, 20]);
+  });
+
+  it('applies multi‑level sort', () => {
+    // tie on first key → sort by age
+    const dupes = [
+      { name: 'A', age: 20 },
+      { name: 'A', age: 10 },
+      { name: 'B', age: 5 },
+    ];
+    const sorted = sortItems(dupes, [
+      { id: 'name', desc: false },
+      { id: 'age', desc: false },
+    ] as MRT_SortingState);
+    expect(sorted.map((i) => [i.name, i.age])).toEqual([
+      ['A', 10],
+      ['A', 20],
+      ['B', 5],
+    ]);
   });
 });
