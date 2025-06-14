@@ -24,7 +24,6 @@ import { Route as ConsumptionIndexImport } from './routes/consumption/index'
 import { Route as ShoppingListNewImport } from './routes/shopping-list/new'
 import { Route as ShoppingListItemIdImport } from './routes/shopping-list/$itemId'
 import { Route as RecipesNewImport } from './routes/recipes/new'
-import { Route as RecipeslayoutImport } from './routes/recipes/__layout'
 import { Route as RecipesRecipeIdImport } from './routes/recipes/$recipeId'
 import { Route as NutrientsNewImport } from './routes/nutrients/new'
 import { Route as NutrientslayoutImport } from './routes/nutrients/__layout'
@@ -41,18 +40,11 @@ import { Route as FoodLogMealMealIdImport } from './routes/food-log/meal/$mealId
 
 // Create Virtual Routes
 
-const RecipesImport = createFileRoute('/recipes')()
 const NutrientsImport = createFileRoute('/nutrients')()
 const IngredientsImport = createFileRoute('/ingredients')()
 const FoodLogImport = createFileRoute('/food-log')()
 
 // Create/Update Routes
-
-const RecipesRoute = RecipesImport.update({
-  id: '/recipes',
-  path: '/recipes',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const NutrientsRoute = NutrientsImport.update({
   id: '/nutrients',
@@ -91,9 +83,9 @@ const SettingsIndexRoute = SettingsIndexImport.update({
 } as any)
 
 const RecipesIndexRoute = RecipesIndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => RecipesRoute,
+  id: '/recipes/',
+  path: '/recipes/',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const NutrientsIndexRoute = NutrientsIndexImport.update({
@@ -133,14 +125,9 @@ const ShoppingListItemIdRoute = ShoppingListItemIdImport.update({
 } as any)
 
 const RecipesNewRoute = RecipesNewImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => RecipesRoute,
-} as any)
-
-const RecipeslayoutRoute = RecipeslayoutImport.update({
-  id: '/__layout',
-  getParentRoute: () => RecipesRoute,
+  id: '/recipes/new',
+  path: '/recipes/new',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const RecipesRecipeIdRoute = RecipesRecipeIdImport.update({
@@ -314,26 +301,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecipesRecipeIdImport
       parentRoute: typeof rootRoute
     }
-    '/recipes': {
-      id: '/recipes'
-      path: '/recipes'
-      fullPath: '/recipes'
-      preLoaderRoute: typeof RecipesImport
-      parentRoute: typeof rootRoute
-    }
-    '/recipes/__layout': {
-      id: '/recipes/__layout'
-      path: '/recipes'
-      fullPath: '/recipes'
-      preLoaderRoute: typeof RecipeslayoutImport
-      parentRoute: typeof RecipesRoute
-    }
     '/recipes/new': {
       id: '/recipes/new'
-      path: '/new'
+      path: '/recipes/new'
       fullPath: '/recipes/new'
       preLoaderRoute: typeof RecipesNewImport
-      parentRoute: typeof RecipesImport
+      parentRoute: typeof rootRoute
     }
     '/shopping-list/$itemId': {
       id: '/shopping-list/$itemId'
@@ -379,10 +352,10 @@ declare module '@tanstack/react-router' {
     }
     '/recipes/': {
       id: '/recipes/'
-      path: '/'
-      fullPath: '/recipes/'
+      path: '/recipes'
+      fullPath: '/recipes'
       preLoaderRoute: typeof RecipesIndexImport
-      parentRoute: typeof RecipesImport
+      parentRoute: typeof rootRoute
     }
     '/settings/': {
       id: '/settings/'
@@ -515,21 +488,6 @@ const RecipesRecipeIdRouteWithChildren = RecipesRecipeIdRoute._addFileChildren(
   RecipesRecipeIdRouteChildren,
 )
 
-interface RecipesRouteChildren {
-  RecipeslayoutRoute: typeof RecipeslayoutRoute
-  RecipesNewRoute: typeof RecipesNewRoute
-  RecipesIndexRoute: typeof RecipesIndexRoute
-}
-
-const RecipesRouteChildren: RecipesRouteChildren = {
-  RecipeslayoutRoute: RecipeslayoutRoute,
-  RecipesNewRoute: RecipesNewRoute,
-  RecipesIndexRoute: RecipesIndexRoute,
-}
-
-const RecipesRouteWithChildren =
-  RecipesRoute._addFileChildren(RecipesRouteChildren)
-
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/food-log/$date': typeof FoodLogDateRoute
@@ -541,7 +499,6 @@ export interface FileRoutesByFullPath {
   '/nutrients': typeof NutrientslayoutRoute
   '/nutrients/new': typeof NutrientsNewRoute
   '/recipes/$recipeId': typeof RecipesRecipeIdRouteWithChildren
-  '/recipes': typeof RecipeslayoutRoute
   '/recipes/new': typeof RecipesNewRoute
   '/shopping-list/$itemId': typeof ShoppingListItemIdRoute
   '/shopping-list/new': typeof ShoppingListNewRoute
@@ -549,7 +506,7 @@ export interface FileRoutesByFullPath {
   '/food-log/': typeof FoodLogIndexRoute
   '/ingredients/': typeof IngredientsIndexRoute
   '/nutrients/': typeof NutrientsIndexRoute
-  '/recipes/': typeof RecipesIndexRoute
+  '/recipes': typeof RecipesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/shopping-list': typeof ShoppingListIndexRoute
   '/food-log/meal/$mealId': typeof FoodLogMealMealIdRoute
@@ -569,11 +526,11 @@ export interface FileRoutesByTo {
   '/nutrients': typeof NutrientsIndexRoute
   '/nutrients/new': typeof NutrientsNewRoute
   '/recipes/$recipeId': typeof RecipesRecipeIdRouteWithChildren
-  '/recipes': typeof RecipesIndexRoute
   '/recipes/new': typeof RecipesNewRoute
   '/shopping-list/$itemId': typeof ShoppingListItemIdRoute
   '/shopping-list/new': typeof ShoppingListNewRoute
   '/consumption': typeof ConsumptionIndexRoute
+  '/recipes': typeof RecipesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/shopping-list': typeof ShoppingListIndexRoute
   '/food-log/meal/$mealId': typeof FoodLogMealMealIdRoute
@@ -597,8 +554,6 @@ export interface FileRoutesById {
   '/nutrients/__layout': typeof NutrientslayoutRoute
   '/nutrients/new': typeof NutrientsNewRoute
   '/recipes/$recipeId': typeof RecipesRecipeIdRouteWithChildren
-  '/recipes': typeof RecipesRouteWithChildren
-  '/recipes/__layout': typeof RecipeslayoutRoute
   '/recipes/new': typeof RecipesNewRoute
   '/shopping-list/$itemId': typeof ShoppingListItemIdRoute
   '/shopping-list/new': typeof ShoppingListNewRoute
@@ -628,7 +583,6 @@ export interface FileRouteTypes {
     | '/nutrients'
     | '/nutrients/new'
     | '/recipes/$recipeId'
-    | '/recipes'
     | '/recipes/new'
     | '/shopping-list/$itemId'
     | '/shopping-list/new'
@@ -636,7 +590,7 @@ export interface FileRouteTypes {
     | '/food-log/'
     | '/ingredients/'
     | '/nutrients/'
-    | '/recipes/'
+    | '/recipes'
     | '/settings'
     | '/shopping-list'
     | '/food-log/meal/$mealId'
@@ -655,11 +609,11 @@ export interface FileRouteTypes {
     | '/nutrients'
     | '/nutrients/new'
     | '/recipes/$recipeId'
-    | '/recipes'
     | '/recipes/new'
     | '/shopping-list/$itemId'
     | '/shopping-list/new'
     | '/consumption'
+    | '/recipes'
     | '/settings'
     | '/shopping-list'
     | '/food-log/meal/$mealId'
@@ -681,8 +635,6 @@ export interface FileRouteTypes {
     | '/nutrients/__layout'
     | '/nutrients/new'
     | '/recipes/$recipeId'
-    | '/recipes'
-    | '/recipes/__layout'
     | '/recipes/new'
     | '/shopping-list/$itemId'
     | '/shopping-list/new'
@@ -709,10 +661,11 @@ export interface RootRouteChildren {
   NutrientsNutrientIdRoute: typeof NutrientsNutrientIdRouteWithChildren
   NutrientsRoute: typeof NutrientsRouteWithChildren
   RecipesRecipeIdRoute: typeof RecipesRecipeIdRouteWithChildren
-  RecipesRoute: typeof RecipesRouteWithChildren
+  RecipesNewRoute: typeof RecipesNewRoute
   ShoppingListItemIdRoute: typeof ShoppingListItemIdRoute
   ShoppingListNewRoute: typeof ShoppingListNewRoute
   ConsumptionIndexRoute: typeof ConsumptionIndexRoute
+  RecipesIndexRoute: typeof RecipesIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   ShoppingListIndexRoute: typeof ShoppingListIndexRoute
 }
@@ -726,10 +679,11 @@ const rootRouteChildren: RootRouteChildren = {
   NutrientsNutrientIdRoute: NutrientsNutrientIdRouteWithChildren,
   NutrientsRoute: NutrientsRouteWithChildren,
   RecipesRecipeIdRoute: RecipesRecipeIdRouteWithChildren,
-  RecipesRoute: RecipesRouteWithChildren,
+  RecipesNewRoute: RecipesNewRoute,
   ShoppingListItemIdRoute: ShoppingListItemIdRoute,
   ShoppingListNewRoute: ShoppingListNewRoute,
   ConsumptionIndexRoute: ConsumptionIndexRoute,
+  RecipesIndexRoute: RecipesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   ShoppingListIndexRoute: ShoppingListIndexRoute,
 }
@@ -752,10 +706,11 @@ export const routeTree = rootRoute
         "/nutrients/$nutrientId",
         "/nutrients",
         "/recipes/$recipeId",
-        "/recipes",
+        "/recipes/new",
         "/shopping-list/$itemId",
         "/shopping-list/new",
         "/consumption/",
+        "/recipes/",
         "/settings/",
         "/shopping-list/"
       ]
@@ -828,21 +783,8 @@ export const routeTree = rootRoute
         "/recipes/$recipeId/edit"
       ]
     },
-    "/recipes": {
-      "filePath": "recipes",
-      "children": [
-        "/recipes/__layout",
-        "/recipes/new",
-        "/recipes/"
-      ]
-    },
-    "/recipes/__layout": {
-      "filePath": "recipes/__layout.tsx",
-      "parent": "/recipes"
-    },
     "/recipes/new": {
-      "filePath": "recipes/new.tsx",
-      "parent": "/recipes"
+      "filePath": "recipes/new.tsx"
     },
     "/shopping-list/$itemId": {
       "filePath": "shopping-list/$itemId.tsx"
@@ -866,8 +808,7 @@ export const routeTree = rootRoute
       "parent": "/nutrients"
     },
     "/recipes/": {
-      "filePath": "recipes/index.tsx",
-      "parent": "/recipes"
+      "filePath": "recipes/index.tsx"
     },
     "/settings/": {
       "filePath": "settings/index.tsx"

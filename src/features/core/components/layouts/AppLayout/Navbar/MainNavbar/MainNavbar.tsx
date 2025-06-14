@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { AppShell, Box, Card, Divider, ScrollArea, Stack } from '@mantine/core';
 import { ColorSchemeToggle } from '@/features/core/components/ColorSchemeToggle/ColorSchemeToggle';
-import { SpotlightSearchBar } from '../../../spotlight/SpotlightSearchBar';
+import { SpotlightSearchBar } from '../../../../spotlight/SpotlightSearchBar';
 import { NavContents } from '../components/NavContents/NavContents';
 import { NavHeader } from '../components/NavHeader/NavHeader';
 import { navLinks } from './MainNavbar.config';

@@ -1,5 +1,5 @@
 import { Burger, Group } from '@mantine/core';
-import { AppLogo } from '../../../../AppLogo';
+import { AppLogo } from '../../../../../AppLogo';
 import { NavHeaderProps } from './NavHeader.types';
 import classes from './NavHeader.module.css';
 

@@ -1,9 +1,9 @@
 import { ReactNode } from 'react';
 import { AppShell, Burger, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { APP, CV } from '../../constants';
-import { useIsMobile } from '../../hooks/useIsMobile';
-import { AppIcon } from '../AppIcon';
+import { APP, CV } from '../../../constants';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { AppIcon } from '../../AppIcon';
 import MainNavbar from './Navbar/MainNavbar/MainNavbar';
 
 interface MainLayoutProps {

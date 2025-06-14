@@ -20,7 +20,7 @@ import {
   MultiSelectProps,
   Tooltip,
 } from '@mantine/core';
-import { ListQueryParamsSetStateActions } from '@/features/core/hooks/useListQueryParamState';
+import { ListQueryParamsSetStateActions } from '@/features/core/hooks/state/useListQueryParamState';
 import { stringToHSL } from '@/features/core/utils/color-utils';
 import { Recipe } from '@/models/food/food-item/Recipe';
 import { FoodItemBase } from '@/models/food/FoodItemBase';
