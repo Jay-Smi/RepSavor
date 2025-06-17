@@ -20,7 +20,7 @@ import {
   MultiSelectProps,
   Tooltip,
 } from '@mantine/core';
-import { ListQueryParamsSetStateActions } from '@/features/core/hooks/state/useListQueryParamState';
+import { ListQueryParamsHandlers } from '@/features/core/hooks/state/useListQueryParamState';
 import { stringToHSL } from '@/features/core/utils/color-utils';
 import { Recipe } from '@/models/food/food-item/Recipe';
 import { FoodItemBase } from '@/models/food/FoodItemBase';
@@ -29,7 +29,7 @@ interface ItemTableProps<TData extends MRT_RowData> {
   result: ListQueryResult<TData>;
   itemType: FoodItemBase['type'];
   params: ListQueryParams;
-  handlers: ListQueryParamsSetStateActions;
+  handlers: ListQueryParamsHandlers;
 }
 
 const renderMultiSelectOption: MultiSelectProps['renderOption'] = ({
@@ -139,11 +139,11 @@ function ItemTable<TData extends MRT_RowData>({
   const { grouping, ...restParams } = params;
 
   const {
-    setColumnFilters,
-    setColumnFilterFns,
-    setGlobalFilter,
-    setSorting,
-    setPagination,
+    handleColumnFiltersChange: setColumnFilters,
+    handleColumnFilterFnsChange: setColumnFilterFns,
+    handleGlobalFilterChange: setGlobalFilter,
+    handleSortingChange: setSorting,
+    handlePaginationChange: setPagination,
   } = handlers;
 
   // ** global state ** //
@@ -151,7 +151,7 @@ function ItemTable<TData extends MRT_RowData>({
   // ** local state ** //
   const columns: MRT_ColumnDef<TData>[] = useMemo(
     () => getColumns(itemType, allTags) as MRT_ColumnDef<TData>[],
-    [allTags]
+    [itemType, allTags]
   );
 
   const table = useMantineReactTable({
@@ -160,6 +160,7 @@ function ItemTable<TData extends MRT_RowData>({
     layoutMode: 'grid',
     enableGrouping: true,
     enableColumnFilterModes: true,
+    enableGlobalFilterModes: true,
     columnFilterModeOptions: [
       'contains',
       'equals',

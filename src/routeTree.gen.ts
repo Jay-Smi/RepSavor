@@ -20,10 +20,11 @@ import { Route as RecipesIndexImport } from './routes/recipes/index'
 import { Route as NutrientsIndexImport } from './routes/nutrients/index'
 import { Route as IngredientsIndexImport } from './routes/ingredients/index'
 import { Route as FoodLogIndexImport } from './routes/food-log/index'
+import { Route as DashboardIndexImport } from './routes/dashboard/index'
 import { Route as ConsumptionIndexImport } from './routes/consumption/index'
 import { Route as ShoppingListNewImport } from './routes/shopping-list/new'
 import { Route as ShoppingListItemIdImport } from './routes/shopping-list/$itemId'
-import { Route as RecipesNewImport } from './routes/recipes/new'
+import { Route as RecipesNewRecipeImport } from './routes/recipes/new-recipe'
 import { Route as RecipesRecipeIdImport } from './routes/recipes/$recipeId'
 import { Route as NutrientsNewImport } from './routes/nutrients/new'
 import { Route as NutrientslayoutImport } from './routes/nutrients/__layout'
@@ -106,6 +107,12 @@ const FoodLogIndexRoute = FoodLogIndexImport.update({
   getParentRoute: () => FoodLogRoute,
 } as any)
 
+const DashboardIndexRoute = DashboardIndexImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const ConsumptionIndexRoute = ConsumptionIndexImport.update({
   id: '/consumption/',
   path: '/consumption/',
@@ -124,9 +131,9 @@ const ShoppingListItemIdRoute = ShoppingListItemIdImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const RecipesNewRoute = RecipesNewImport.update({
-  id: '/recipes/new',
-  path: '/recipes/new',
+const RecipesNewRecipeRoute = RecipesNewRecipeImport.update({
+  id: '/recipes/new-recipe',
+  path: '/recipes/new-recipe',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -301,11 +308,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecipesRecipeIdImport
       parentRoute: typeof rootRoute
     }
-    '/recipes/new': {
-      id: '/recipes/new'
-      path: '/recipes/new'
-      fullPath: '/recipes/new'
-      preLoaderRoute: typeof RecipesNewImport
+    '/recipes/new-recipe': {
+      id: '/recipes/new-recipe'
+      path: '/recipes/new-recipe'
+      fullPath: '/recipes/new-recipe'
+      preLoaderRoute: typeof RecipesNewRecipeImport
       parentRoute: typeof rootRoute
     }
     '/shopping-list/$itemId': {
@@ -327,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/consumption'
       fullPath: '/consumption'
       preLoaderRoute: typeof ConsumptionIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardIndexImport
       parentRoute: typeof rootRoute
     }
     '/food-log/': {
@@ -499,10 +513,11 @@ export interface FileRoutesByFullPath {
   '/nutrients': typeof NutrientslayoutRoute
   '/nutrients/new': typeof NutrientsNewRoute
   '/recipes/$recipeId': typeof RecipesRecipeIdRouteWithChildren
-  '/recipes/new': typeof RecipesNewRoute
+  '/recipes/new-recipe': typeof RecipesNewRecipeRoute
   '/shopping-list/$itemId': typeof ShoppingListItemIdRoute
   '/shopping-list/new': typeof ShoppingListNewRoute
   '/consumption': typeof ConsumptionIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/food-log/': typeof FoodLogIndexRoute
   '/ingredients/': typeof IngredientsIndexRoute
   '/nutrients/': typeof NutrientsIndexRoute
@@ -526,10 +541,11 @@ export interface FileRoutesByTo {
   '/nutrients': typeof NutrientsIndexRoute
   '/nutrients/new': typeof NutrientsNewRoute
   '/recipes/$recipeId': typeof RecipesRecipeIdRouteWithChildren
-  '/recipes/new': typeof RecipesNewRoute
+  '/recipes/new-recipe': typeof RecipesNewRecipeRoute
   '/shopping-list/$itemId': typeof ShoppingListItemIdRoute
   '/shopping-list/new': typeof ShoppingListNewRoute
   '/consumption': typeof ConsumptionIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/recipes': typeof RecipesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/shopping-list': typeof ShoppingListIndexRoute
@@ -554,10 +570,11 @@ export interface FileRoutesById {
   '/nutrients/__layout': typeof NutrientslayoutRoute
   '/nutrients/new': typeof NutrientsNewRoute
   '/recipes/$recipeId': typeof RecipesRecipeIdRouteWithChildren
-  '/recipes/new': typeof RecipesNewRoute
+  '/recipes/new-recipe': typeof RecipesNewRecipeRoute
   '/shopping-list/$itemId': typeof ShoppingListItemIdRoute
   '/shopping-list/new': typeof ShoppingListNewRoute
   '/consumption/': typeof ConsumptionIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/food-log/': typeof FoodLogIndexRoute
   '/ingredients/': typeof IngredientsIndexRoute
   '/nutrients/': typeof NutrientsIndexRoute
@@ -583,10 +600,11 @@ export interface FileRouteTypes {
     | '/nutrients'
     | '/nutrients/new'
     | '/recipes/$recipeId'
-    | '/recipes/new'
+    | '/recipes/new-recipe'
     | '/shopping-list/$itemId'
     | '/shopping-list/new'
     | '/consumption'
+    | '/dashboard'
     | '/food-log/'
     | '/ingredients/'
     | '/nutrients/'
@@ -609,10 +627,11 @@ export interface FileRouteTypes {
     | '/nutrients'
     | '/nutrients/new'
     | '/recipes/$recipeId'
-    | '/recipes/new'
+    | '/recipes/new-recipe'
     | '/shopping-list/$itemId'
     | '/shopping-list/new'
     | '/consumption'
+    | '/dashboard'
     | '/recipes'
     | '/settings'
     | '/shopping-list'
@@ -635,10 +654,11 @@ export interface FileRouteTypes {
     | '/nutrients/__layout'
     | '/nutrients/new'
     | '/recipes/$recipeId'
-    | '/recipes/new'
+    | '/recipes/new-recipe'
     | '/shopping-list/$itemId'
     | '/shopping-list/new'
     | '/consumption/'
+    | '/dashboard/'
     | '/food-log/'
     | '/ingredients/'
     | '/nutrients/'
@@ -661,10 +681,11 @@ export interface RootRouteChildren {
   NutrientsNutrientIdRoute: typeof NutrientsNutrientIdRouteWithChildren
   NutrientsRoute: typeof NutrientsRouteWithChildren
   RecipesRecipeIdRoute: typeof RecipesRecipeIdRouteWithChildren
-  RecipesNewRoute: typeof RecipesNewRoute
+  RecipesNewRecipeRoute: typeof RecipesNewRecipeRoute
   ShoppingListItemIdRoute: typeof ShoppingListItemIdRoute
   ShoppingListNewRoute: typeof ShoppingListNewRoute
   ConsumptionIndexRoute: typeof ConsumptionIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
   RecipesIndexRoute: typeof RecipesIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   ShoppingListIndexRoute: typeof ShoppingListIndexRoute
@@ -679,10 +700,11 @@ const rootRouteChildren: RootRouteChildren = {
   NutrientsNutrientIdRoute: NutrientsNutrientIdRouteWithChildren,
   NutrientsRoute: NutrientsRouteWithChildren,
   RecipesRecipeIdRoute: RecipesRecipeIdRouteWithChildren,
-  RecipesNewRoute: RecipesNewRoute,
+  RecipesNewRecipeRoute: RecipesNewRecipeRoute,
   ShoppingListItemIdRoute: ShoppingListItemIdRoute,
   ShoppingListNewRoute: ShoppingListNewRoute,
   ConsumptionIndexRoute: ConsumptionIndexRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
   RecipesIndexRoute: RecipesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   ShoppingListIndexRoute: ShoppingListIndexRoute,
@@ -706,10 +728,11 @@ export const routeTree = rootRoute
         "/nutrients/$nutrientId",
         "/nutrients",
         "/recipes/$recipeId",
-        "/recipes/new",
+        "/recipes/new-recipe",
         "/shopping-list/$itemId",
         "/shopping-list/new",
         "/consumption/",
+        "/dashboard/",
         "/recipes/",
         "/settings/",
         "/shopping-list/"
@@ -783,8 +806,8 @@ export const routeTree = rootRoute
         "/recipes/$recipeId/edit"
       ]
     },
-    "/recipes/new": {
-      "filePath": "recipes/new.tsx"
+    "/recipes/new-recipe": {
+      "filePath": "recipes/new-recipe.tsx"
     },
     "/shopping-list/$itemId": {
       "filePath": "shopping-list/$itemId.tsx"
@@ -794,6 +817,9 @@ export const routeTree = rootRoute
     },
     "/consumption/": {
       "filePath": "consumption/index.tsx"
+    },
+    "/dashboard/": {
+      "filePath": "dashboard/index.tsx"
     },
     "/food-log/": {
       "filePath": "food-log/index.tsx",

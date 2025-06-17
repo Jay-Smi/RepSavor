@@ -1,6 +1,6 @@
 import { MRT_RowData } from 'mantine-react-table';
 import { FoodItemBase } from '@/models/food/FoodItemBase';
-import { ListQueryParamsSetStateActions } from '../../hooks/state/useListQueryParamState';
+import { ListQueryParamsHandlers } from '../../hooks/state/useListQueryParamState';
 import { ListQueryParams, ListQueryResult } from '../../types/query.types';
 import { ViewMode } from '../layouts/PageLayout/layouts/ListPageLayout/ListPageLayout.types';
 import ItemGrid from './grid/ItemGrid';
@@ -9,7 +9,7 @@ import ItemTable from './table/ItemTable';
 interface ItemListProps<T> {
   result: ListQueryResult<T>;
   params: ListQueryParams;
-  handlers: ListQueryParamsSetStateActions;
+  handlers: ListQueryParamsHandlers;
   itemType: FoodItemBase['type'];
   viewMode?: ViewMode;
 }

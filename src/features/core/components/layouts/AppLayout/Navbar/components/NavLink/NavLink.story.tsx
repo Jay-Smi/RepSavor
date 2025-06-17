@@ -3,27 +3,27 @@ import { NavLink } from './NavLink';
 
 const meta = {
   title: 'Components/Navbar/NavLink',
-  component: (props) => <NavLink {...props} maw={300} />,
-  tags: ['autodocs'],
-  argTypes: {
-    href: {
-      control: 'text',
-      description: 'Destination URL',
-    },
-    label: {
-      control: 'text',
-      description: 'Text label for tooltip and expanded state',
-    },
-    icon: {
-      control: 'text',
-      description: 'Iconify icon string (e.g. "mdi:home")',
-    },
-    opened: {
-      control: 'boolean',
-      description:
-        'Whether the nav is expanded (shows label) or collapsed (icon-only)',
-    },
-  },
+  component: NavLink,
+  // tags: ['autodocs'],
+  // argTypes: {
+  //   href: {
+  //     control: 'text',
+  //     description: 'Destination URL',
+  //   },
+  //   label: {
+  //     control: 'text',
+  //     description: 'Text label for tooltip and expanded state',
+  //   },
+  //   icon: {
+  //     control: 'text',
+  //     description: 'Iconify icon string (e.g. "mdi:home")',
+  //   },
+  //   opened: {
+  //     control: 'boolean',
+  //     description:
+  //       'Whether the nav is expanded (shows label) or collapsed (icon-only)',
+  //   },
+  // },
 } satisfies Meta<typeof NavLink>;
 
 export default meta;

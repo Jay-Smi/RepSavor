@@ -8,16 +8,18 @@ import {
 } from 'mantine-react-table';
 import { ListQueryParams } from '../../types/query.types';
 
-export type ListQueryParamsSetStateActions = {
-  setColumnFilters: Dispatch<SetStateAction<MRT_ColumnFiltersState>>;
-  setColumnFilterFns: Dispatch<SetStateAction<MRT_ColumnFilterFnsState>>;
-  setGlobalFilter: Dispatch<SetStateAction<string>>;
-  setSorting: Dispatch<SetStateAction<MRT_SortingState>>;
-  setPagination: Dispatch<SetStateAction<MRT_PaginationState>>;
-  setGrouping: Dispatch<SetStateAction<MRT_GroupingState>>;
+export type ListQueryParamsHandlers = {
+  handleColumnFiltersChange: Dispatch<SetStateAction<MRT_ColumnFiltersState>>;
+  handleColumnFilterFnsChange: Dispatch<
+    SetStateAction<MRT_ColumnFilterFnsState>
+  >;
+  handleGlobalFilterChange: Dispatch<SetStateAction<string>>;
+  handleSortingChange: Dispatch<SetStateAction<MRT_SortingState>>;
+  handlePaginationChange: Dispatch<SetStateAction<MRT_PaginationState>>;
+  handleGroupingChange: Dispatch<SetStateAction<MRT_GroupingState>>;
 };
 
-type ParamStateReturnType = [ListQueryParams, ListQueryParamsSetStateActions];
+type ParamStateReturnType = [ListQueryParams, ListQueryParamsHandlers];
 
 export function useListQueryParamState(): ParamStateReturnType {
   const [params, setParams] = useState<ListQueryParams>({
@@ -29,48 +31,52 @@ export function useListQueryParamState(): ParamStateReturnType {
     grouping: [],
   });
 
-  const setColumnFilters: Dispatch<SetStateAction<MRT_ColumnFiltersState>> =
-    useCallback(
-      (action) =>
-        setParams((p) => ({
-          ...p,
-          columnFilters:
-            typeof action === 'function' ? action(p.columnFilters!) : action,
-        })),
-      []
-    );
-
-  const setColumnFilterFns: Dispatch<SetStateAction<MRT_ColumnFilterFnsState>> =
-    useCallback(
-      (action) =>
-        setParams((p) => ({
-          ...p,
-          columnFilterFns:
-            typeof action === 'function' ? action(p.columnFilterFns!) : action,
-        })),
-      []
-    );
-
-  const setGlobalFilter: Dispatch<SetStateAction<string>> = useCallback(
+  const handleColumnFiltersChange: Dispatch<
+    SetStateAction<MRT_ColumnFiltersState>
+  > = useCallback(
     (action) =>
       setParams((p) => ({
         ...p,
-        globalFilter:
-          typeof action === 'function' ? action(p.globalFilter!) : action,
+        columnFilters:
+          typeof action === 'function' ? action(p.columnFilters!) : action,
       })),
     []
   );
 
-  const setSorting: Dispatch<SetStateAction<MRT_SortingState>> = useCallback(
+  const handleColumnFilterFnsChange: Dispatch<
+    SetStateAction<MRT_ColumnFilterFnsState>
+  > = useCallback(
     (action) =>
       setParams((p) => ({
         ...p,
-        sorting: typeof action === 'function' ? action(p.sorting!) : action,
+        columnFilterFns:
+          typeof action === 'function' ? action(p.columnFilterFns!) : action,
       })),
     []
   );
 
-  const setPagination: Dispatch<SetStateAction<MRT_PaginationState>> =
+  const handleGlobalFilterChange: Dispatch<SetStateAction<string>> =
+    useCallback(
+      (action) =>
+        setParams((p) => ({
+          ...p,
+          globalFilter:
+            typeof action === 'function' ? action(p.globalFilter!) : action,
+        })),
+      []
+    );
+
+  const handleSortingChange: Dispatch<SetStateAction<MRT_SortingState>> =
+    useCallback(
+      (action) =>
+        setParams((p) => ({
+          ...p,
+          sorting: typeof action === 'function' ? action(p.sorting!) : action,
+        })),
+      []
+    );
+
+  const handlePaginationChange: Dispatch<SetStateAction<MRT_PaginationState>> =
     useCallback(
       (action) =>
         setParams((p) => ({
@@ -81,24 +87,25 @@ export function useListQueryParamState(): ParamStateReturnType {
       []
     );
 
-  const setGrouping: Dispatch<SetStateAction<MRT_GroupingState>> = useCallback(
-    (action) =>
-      setParams((p) => ({
-        ...p,
-        grouping: typeof action === 'function' ? action(p.grouping!) : action,
-      })),
-    []
-  );
+  const handleGroupingChange: Dispatch<SetStateAction<MRT_GroupingState>> =
+    useCallback(
+      (action) =>
+        setParams((p) => ({
+          ...p,
+          grouping: typeof action === 'function' ? action(p.grouping!) : action,
+        })),
+      []
+    );
 
   return [
     params,
     {
-      setColumnFilters,
-      setColumnFilterFns,
-      setGlobalFilter,
-      setSorting,
-      setPagination,
-      setGrouping,
+      handleColumnFiltersChange,
+      handleColumnFilterFnsChange,
+      handleGlobalFilterChange,
+      handleSortingChange,
+      handlePaginationChange,
+      handleGroupingChange,
     },
   ] as const;
 }

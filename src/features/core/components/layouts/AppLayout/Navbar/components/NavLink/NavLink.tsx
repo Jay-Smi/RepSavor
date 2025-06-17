@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react';
 import { Tooltip } from '@mantine/core';
-import { CustomLink } from '../../../../../CustomLink';
+import { CustomLink } from '../../../../../AppLink';
 import { NavLinkProps } from './NavLink.types';
 import classes from './NavLink.module.css';
 

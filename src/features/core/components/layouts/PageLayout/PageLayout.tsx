@@ -1,17 +1,18 @@
 import { Box, Group, Stack } from '@mantine/core';
+import AppBreadcrumbs from '../../AppBreadcrumbs/AppBreadcrumbs';
 import { PageLayoutProps } from './PageLayout.types';
 
 const PageLayout = ({
-  headerLeft,
   headerRight,
   children,
   footerLeft,
   footerRight,
 }: PageLayoutProps) => (
   <Stack>
-    {(headerLeft || headerRight) && (
+    {headerRight && (
       <Group component="header" justify="space-between">
-        {headerLeft || <Box />}
+        <AppBreadcrumbs />
+
         {headerRight}
       </Group>
     )}

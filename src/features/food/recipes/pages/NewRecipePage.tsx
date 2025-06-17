@@ -1,3 +1,5 @@
+import AppBreadcrumbs from '@/features/core/components/AppBreadcrumbs/AppBreadcrumbs';
+
 interface NewRecipePageProps {}
 
 const NewRecipePage = ({}: NewRecipePageProps) => {
@@ -8,6 +10,10 @@ const NewRecipePage = ({}: NewRecipePageProps) => {
   // ** local vars ** //
 
   // ** handlers ** //
-  return <div>NewRecipePage</div>;
+  return (
+    <div>
+      <AppBreadcrumbs />
+    </div>
+  );
 };
 export default NewRecipePage;

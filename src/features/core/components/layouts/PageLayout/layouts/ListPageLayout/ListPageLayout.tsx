@@ -4,9 +4,9 @@ import { ListPageLayoutProps } from './ListPageLayout.types';
 
 export const ListPageLayout = ({
   children,
-  params,
-  handlers,
-  ...pageLayoutProps
+  queryParams,
+  queryParamHandlers,
+  pageLayoutProps,
 }: ListPageLayoutProps) => (
   <PageLayout {...pageLayoutProps} headerRight={<Box>DATA CONTROLS</Box>}>
     {children}

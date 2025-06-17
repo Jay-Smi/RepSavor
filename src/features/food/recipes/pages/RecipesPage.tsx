@@ -1,8 +1,5 @@
 import ItemList from '@/features/core/components/ItemList/ItemList';
-import {
-  ListPageLayout,
-  useListPageContext,
-} from '@/features/core/components/layouts/PageLayout/layouts/ListPageLayout/ListPageLayout';
+import { ListPageLayout } from '@/features/core/components/layouts/PageLayout/layouts/ListPageLayout/ListPageLayout';
 import { useListQueryParamState } from '@/features/core/hooks/state/useListQueryParamState';
 import { Recipe } from '@/models/food/food-item/Recipe';
 import { useRecipes } from '../hooks/useRecipes';
@@ -20,8 +17,9 @@ const RecipesPage = () => {
   // ** local vars ** //
 
   // ** handlers ** //
+
   return (
-    <ListPageLayout params={params} handlers={handlers}>
+    <ListPageLayout queryParams={params} queryParamHandlers={handlers}>
       <ItemList<Recipe>
         itemType="recipe"
         result={result}
